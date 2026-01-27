@@ -99,22 +99,16 @@ const Home = () => {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full mb-6">
               <Sparkles className="w-4 h-4 text-blue-400" />
-              <span className="text-blue-400 text-sm">AI-Powered Learning Platform</span>
+              <span className="text-blue-400 text-sm font-urdu">AI سے چلنے والا لرننگ پلیٹ فارم</span>
             </div>
 
             {/* Title */}
-            <h1 className="text-5xl md:text-7xl font-bold mb-6">
-              <span className="text-white">{t('home.title')}</span>
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 font-urdu">
+              <span className="text-white">AI کے ساتھ پروگرامنگ سیکھیں</span>
             </h1>
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 font-urdu text-gray-400">
-              AI کے ساتھ پروگرامنگ سیکھیں
-            </h2>
 
             {/* Subtitle */}
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-4">
-              {t('home.subtitle')}
-            </p>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8 font-urdu">
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8 font-urdu">
               گیمیفائیڈ اسباق اور دو لسانی AI ٹیوٹرنگ کے ساتھ C++، Python، اور JavaScript سیکھیں
             </p>
 
@@ -122,17 +116,17 @@ const Home = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-semibold rounded-xl hover:opacity-90 transition-opacity font-urdu"
               >
                 <Play size={20} />
-                {t('home.getStarted')}
+                شروع کریں
               </Link>
               <Link
                 to="/login"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gray-800 text-white text-lg font-semibold rounded-xl hover:bg-gray-700 transition-colors border border-gray-700"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gray-800 text-white text-lg font-semibold rounded-xl hover:bg-gray-700 transition-colors border border-gray-700 font-urdu"
               >
                 <Globe size={20} />
-                Explore Platform
+                پلیٹ فارم دیکھیں
               </Link>
             </div>
           </motion.div>
@@ -146,11 +140,11 @@ const Home = () => {
           >
             <div className="flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-lg">
               <span className="text-green-400">🇵🇰</span>
-              <span className="text-green-400">اردو سپورٹ</span>
+              <span className="text-green-400 font-urdu">اردو سپورٹ</span>
             </div>
             <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
               <span className="text-blue-400">🇬🇧</span>
-              <span className="text-blue-400">English Support</span>
+              <span className="text-blue-400">انگریزی سپورٹ</span>
             </div>
           </motion.div>
         </div>
@@ -160,18 +154,18 @@ const Home = () => {
       <section className="py-20 px-6">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Learn → Practice → Compete → Reward
+            <h2 className="text-3xl font-bold text-white mb-4 font-urdu">
+              سیکھیں → مشق کریں → مقابلہ کریں → انعام
             </h2>
-            <p className="text-gray-400">
-              The complete learning loop for programming mastery
+            <p className="text-gray-400 font-urdu">
+              پروگرامنگ مہارت کے لیے مکمل سیکھنے کا چکر
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
               <motion.div
-                key={feature.title}
+                key={feature.titleUr}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -180,10 +174,8 @@ const Home = () => {
                 <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4`}>
                   <feature.icon className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-1">{feature.title}</h3>
-                <h4 className="text-lg font-urdu text-gray-400 mb-2">{feature.titleUr}</h4>
-                <p className="text-gray-400 text-sm mb-1">{feature.description}</p>
-                <p className="text-gray-500 text-sm font-urdu">{feature.descriptionUr}</p>
+                <h3 className="text-xl font-bold text-white mb-2 font-urdu">{feature.titleUr}</h3>
+                <p className="text-gray-400 text-sm font-urdu">{feature.descriptionUr}</p>
               </motion.div>
             ))}
           </div>
@@ -196,7 +188,7 @@ const Home = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <motion.div
-                key={stat.label}
+                key={stat.labelUr}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
@@ -205,8 +197,7 @@ const Home = () => {
                 <div className="text-4xl md:text-5xl font-bold gradient-text mb-2">
                   {stat.value}
                 </div>
-                <div className="text-gray-400">{stat.label}</div>
-                <div className="text-gray-500 font-urdu text-sm">{stat.labelUr}</div>
+                <div className="text-gray-400 font-urdu">{stat.labelUr}</div>
               </motion.div>
             ))}
           </div>
@@ -219,28 +210,25 @@ const Home = () => {
           <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-3xl p-8 md:p-12">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
-                <h2 className="text-3xl font-bold text-white mb-4">
-                  🤖 AI Tutor - Your Personal Programming Guide
+                <h2 className="text-3xl font-bold text-white mb-6 font-urdu">
+                  🤖 AI ٹیوٹر - آپ کا ذاتی پروگرامنگ گائیڈ
                 </h2>
-                <h3 className="text-2xl font-urdu text-gray-300 mb-6">
-                  AI ٹیوٹر - آپ کا ذاتی پروگرامنگ گائیڈ
-                </h3>
                 <ul className="space-y-4">
-                  <li className="flex items-center gap-3 text-gray-300">
+                  <li className="flex items-center gap-3 text-gray-300 font-urdu">
                     <span className="text-green-400">✓</span>
-                    <span>Bilingual support (English & Urdu)</span>
+                    <span>دو لسانی سپورٹ (انگریزی اور اردو)</span>
                   </li>
-                  <li className="flex items-center gap-3 text-gray-300">
+                  <li className="flex items-center gap-3 text-gray-300 font-urdu">
                     <span className="text-green-400">✓</span>
-                    <span>Voice explanations for concepts</span>
+                    <span>تصورات کی آواز میں وضاحت</span>
                   </li>
-                  <li className="flex items-center gap-3 text-gray-300">
+                  <li className="flex items-center gap-3 text-gray-300 font-urdu">
                     <span className="text-green-400">✓</span>
-                    <span>Real-time code error detection</span>
+                    <span>ریئل ٹائم کوڈ ایرر کا پتہ لگانا</span>
                   </li>
-                  <li className="flex items-center gap-3 text-gray-300">
+                  <li className="flex items-center gap-3 text-gray-300 font-urdu">
                     <span className="text-green-400">✓</span>
-                    <span>Beginner-friendly explanations</span>
+                    <span>مبتدیوں کے لیے آسان وضاحتیں</span>
                   </li>
                 </ul>
               </div>
@@ -250,20 +238,17 @@ const Home = () => {
                     <span>🤖</span>
                   </div>
                   <div className="flex-1 bg-gray-700 rounded-lg p-4">
-                    <p className="text-white mb-2">
-                      Great question! Let me explain how loops work...
-                    </p>
-                    <p className="text-gray-400 font-urdu">
+                    <p className="text-white font-urdu">
                       بہت اچھا سوال! مجھے بتانے دیں کہ لوپس کیسے کام کرتے ہیں...
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button className="flex-1 py-2 bg-blue-500/20 text-blue-400 rounded-lg border border-blue-500/30 hover:bg-blue-500/30 transition-colors">
-                    🎤 Ask with Voice
+                  <button className="flex-1 py-2 bg-blue-500/20 text-blue-400 rounded-lg border border-blue-500/30 hover:bg-blue-500/30 transition-colors font-urdu">
+                    🎤 آواز سے پوچھیں
                   </button>
-                  <button className="flex-1 py-2 bg-purple-500/20 text-purple-400 rounded-lg border border-purple-500/30 hover:bg-purple-500/30 transition-colors">
-                    🔊 Hear Explanation
+                  <button className="flex-1 py-2 bg-purple-500/20 text-purple-400 rounded-lg border border-purple-500/30 hover:bg-purple-500/30 transition-colors font-urdu">
+                    🔊 وضاحت سنیں
                   </button>
                 </div>
               </div>
@@ -275,17 +260,17 @@ const Home = () => {
       {/* CTA Section */}
       <section className="py-20 px-6">
         <div className="container mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-4">
-            Ready to Start Your Coding Journey?
+          <h2 className="text-4xl font-bold text-white mb-4 font-urdu">
+            کوڈنگ کا سفر شروع کرنے کے لیے تیار ہیں؟
           </h2>
-          <p className="text-xl text-gray-400 mb-8">
-            Join thousands of students learning to code with AI
+          <p className="text-xl text-gray-400 mb-8 font-urdu">
+            AI کے ساتھ کوڈ سیکھنے والے ہزاروں طلباء میں شامل ہوں
           </p>
           <Link 
             to="/register"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-semibold rounded-xl hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-lg font-semibold rounded-xl hover:opacity-90 transition-opacity font-urdu"
           >
-            Start Learning Free
+            مفت سیکھنا شروع کریں
           </Link>
         </div>
       </section>
@@ -293,7 +278,7 @@ const Home = () => {
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-gray-800">
         <div className="container mx-auto text-center text-gray-500">
-          <p>Made with ❤️ by Team AI CHAMPS</p>
+          <p className="font-urdu">ٹیم AI CHAMPS کی طرف سے ❤️ کے ساتھ بنایا گیا</p>
           <p className="font-urdu mt-2">پاکستانی ڈویلپرز کی اگلی نسل کو بااختیار بنانا</p>
         </div>
       </footer>
