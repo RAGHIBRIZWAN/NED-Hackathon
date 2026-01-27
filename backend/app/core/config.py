@@ -39,11 +39,6 @@ class Settings(BaseSettings):
     MONGODB_URL: str = "mongodb://localhost:27017"
     MONGODB_DB_NAME: str = "codehub"
     
-    # Supabase
-    SUPABASE_URL: str = "https://your-project.supabase.co"
-    SUPABASE_KEY: str = "your-supabase-anon-key"
-    SUPABASE_SERVICE_KEY: str = "your-supabase-service-role-key"
-    
     # Judge0 API (Code Execution)
     JUDGE0_API_URL: str = "https://judge0-ce.p.rapidapi.com"
     JUDGE0_API_KEY: str = "your-judge0-api-key"

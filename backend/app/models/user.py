@@ -44,7 +44,6 @@ class User(Document):
     email: EmailStr = Field(..., index=True)
     username: str = Field(..., index=True)
     hashed_password: str
-    supabase_id: Optional[str] = None
     
     # Profile
     full_name: str

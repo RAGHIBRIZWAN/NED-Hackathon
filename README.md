@@ -62,7 +62,7 @@ We utilize a modern, decoupled architecture for scalability.
 
 ### **Database & Tools**
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-Authentication-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 
 ---
 
@@ -92,7 +92,7 @@ We utilize a modern, decoupled architecture for scalability.
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python)](https://python.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat-square&logo=mongodb)](https://mongodb.com/)
-[![Supabase](https://img.shields.io/badge/Supabase-Auth-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com/)
+[![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=flat-square&logo=jsonwebtokens)](https://jwt.io/)
 
 *Bilingual AI-Powered Programming Education for Pakistan and Beyond*
 
@@ -135,7 +135,7 @@ CodeHub is a next-generation learning platform that teaches **C++, Python, and J
 │                           CLIENT LAYER                                   │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
 │  │  React 19 + Vite + Monaco Editor + TailwindCSS                   │   │
-│  │  ├── Authentication (Supabase Auth)                              │   │
+│  │  ├── Authentication (JWT + MongoDB)                              │   │
 │  │  ├── Code Editor (Monaco + Judge0 Integration)                   │   │
 │  │  ├── AI Tutor Chat (Voice + Text, Urdu/English)                 │   │
 │  │  ├── Gamification Dashboard (Coins, Badges, Levels)             │   │
@@ -170,10 +170,10 @@ CodeHub is a next-generation learning platform that teaches **C++, Python, and J
 │ │ - Error Help    │ │ │ │ - Python Runner │ │ │ │ - Progress      │ │
 │ │ - Concept Tutor │ │ │ │ - JS Executor   │ │ │ │ - Submissions   │ │
 │ ├─────────────────┤ │ │ │ - Sandboxed     │ │ │ ├─────────────────┤ │
-│ │ Gemini AI       │ │ │ │ - Hidden Tests  │ │ │ │ Supabase        │ │
-│ │ - RAG MCQ Gen   │ │ │ └─────────────────┘ │ │ │ - Auth          │ │
-│ │ - Content Gen   │ │ └─────────────────────┘ │ │ - Real-time     │ │
-│ ├─────────────────┤ │                         │ │ - File Storage  │ │
+│ │ Gemini AI       │ │ │ │ - Hidden Tests  │ │ │ │ MongoDB Atlas   │ │
+│ │ - RAG MCQ Gen   │ │ │ └─────────────────┘ │ │ │ - Leaderboards  │ │
+│ │ - Content Gen   │ │ └─────────────────────┘ │ │ - Contests      │ │
+│ ├─────────────────┤ │                         │ └─────────────────┘ │
 │ │ Voice AI        │ │                         │ └─────────────────┘ │
 │ │ - Whisper STT   │ │                         └─────────────────────┘
 │ │ - Voice Uplift  │ │
@@ -250,7 +250,6 @@ codehub/
 - Node.js 18+
 - Python 3.11+
 - MongoDB Atlas account
-- Supabase account
 - Judge0 API access
 - Groq API key
 - Google AI (Gemini) API key
@@ -327,7 +326,7 @@ cd backend && uvicorn main:app --reload
 
 ## 🔐 Security Features
 
-- **JWT Authentication** via Supabase
+- **JWT Authentication** with MongoDB
 - **Rate Limiting** on all API endpoints
 - **Sandboxed Code Execution** via Judge0
 - **Input Sanitization** on all user inputs
@@ -391,7 +390,7 @@ cd backend && uvicorn main:app --reload
 | Styling | TailwindCSS | Responsive design |
 | State | Zustand | State management |
 | Backend | FastAPI | High-performance API |
-| Auth | Supabase | Authentication |
+| Auth | JWT + MongoDB | Authentication |
 | Database | MongoDB Atlas | User data, progress |
 | Code Exec | Judge0 | Sandboxed execution |
 | AI LLM | Groq + Gemini | AI tutoring |
