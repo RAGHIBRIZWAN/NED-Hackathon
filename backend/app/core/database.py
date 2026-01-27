@@ -11,12 +11,13 @@ from typing import Optional
 from .config import settings
 from app.models.user import User
 from app.models.lesson import Lesson, LessonProgress
-from app.models.challenge import Challenge, Submission
+from app.models.challenge import Challenge, Submission as ChallengeSubmission
 from app.models.mcq import MCQQuestion, MCQAttempt
 from app.models.gamification import UserRewards, Badge, Achievement
 from app.models.contest import Contest, ContestParticipation
 from app.models.proctoring import ExamSession, ProctoringEvent
 from app.models.notification import Notification
+from app.models.submission import Submission, UserProblemStatus
 
 
 # Global database client
@@ -51,7 +52,7 @@ async def connect_db():
                 Lesson,
                 LessonProgress,
                 Challenge,
-                Submission,
+                ChallengeSubmission,
                 MCQQuestion,
                 MCQAttempt,
                 UserRewards,
@@ -62,6 +63,8 @@ async def connect_db():
                 ExamSession,
                 ProctoringEvent,
                 Notification,
+                Submission,
+                UserProblemStatus,
             ]
         )
         

@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = "your-gemini-api-key"
     OPENAI_API_KEY: str = "your-openai-api-key"  # For Whisper
     
+    # Codeforces API
+    CODEFORCES_API_URL: str = "https://codeforces.com/api"
+    CODEFORCES_API_KEY: str = "8d9c93dc6cf323d869e9b922cd5a89511f750bc3"
+    CODEFORCES_API_SECRET: str = "3fe38c008a5aad3a9dd28a46d3dcd0d8f2c7b279"
+    
     # Redis (Caching & Rate Limiting)
     REDIS_URL: str = "redis://localhost:6379"
     

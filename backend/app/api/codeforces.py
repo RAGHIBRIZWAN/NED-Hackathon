@@ -5,10 +5,14 @@ Fetch problems from Codeforces for practice and contest creation.
 """
 
 import httpx
+import hashlib
+import random
+import time
 from datetime import datetime, timedelta
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, status, Query
 from pydantic import BaseModel
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -18,6 +22,49 @@ _problems_cache = {
     "last_updated": None,
     "cache_duration": timedelta(minutes=30)  # Cache for 30 minutes
 }
+
+
+def generate_api_sig(method_name: str, params: dict = None) -> dict:
+    """
+    Generate Codeforces API signature for authenticated requests.
+    
+    Args:
+        method_name: API method name (e.g., 'problemset.problems')
+        params: Additional parameters for the request
+    
+    Returns:
+        Dictionary with apiKey, time, and apiSig parameters
+    """
+    if params is None:
+        params = {}
+    
+    # Generate random string (6 characters)
+    rand = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+    
+    # Current UNIX timestamp
+    current_time = int(time.time())
+    
+    # Add required parameters
+    params['apiKey'] = settings.CODEFORCES_API_KEY
+    params['time'] = str(current_time)
+    
+    # Sort parameters alphabetically
+    sorted_params = sorted(params.items())
+    
+    # Create parameter string
+    param_string = '&'.join([f'{key}={value}' for key, value in sorted_params])
+    
+    # Create hash string: rand/methodName?param1=value1&param2=value2#secret
+    hash_string = f"{rand}/{method_name}?{param_string}#{settings.CODEFORCES_API_SECRET}"
+    
+    # Generate SHA-512 hash
+    api_sig = rand + hashlib.sha512(hash_string.encode()).hexdigest()
+    
+    return {
+        'apiKey': settings.CODEFORCES_API_KEY,
+        'time': str(current_time),
+        'apiSig': api_sig
+    }
 
 
 class CodeforcesProblem(BaseModel):
@@ -44,7 +91,14 @@ async def fetch_codeforces_problems():
     
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get("https://codeforces.com/api/problemset.problems")
+            # Generate authenticated API signature
+            auth_params = generate_api_sig('problemset.problems')
+            
+            # Make authenticated request
+            response = await client.get(
+                f"{settings.CODEFORCES_API_URL}/problemset.problems",
+                params=auth_params
+            )
             
             if response.status_code != 200:
                 raise HTTPException(

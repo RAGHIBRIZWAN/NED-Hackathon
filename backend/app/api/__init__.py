@@ -17,6 +17,7 @@ from .proctor import router as proctor_router
 from .admin import router as admin_router
 from .notifications import router as notifications_router
 from .codeforces import router as codeforces_router
+from .practice import router as practice_router
 
 router = APIRouter()
 
@@ -32,3 +33,4 @@ router.include_router(proctor_router, prefix="/proctor", tags=["Proctoring"])
 router.include_router(admin_router, prefix="/admin", tags=["Admin"])
 router.include_router(notifications_router, prefix="/notifications", tags=["Notifications"])
 router.include_router(codeforces_router, prefix="/codeforces", tags=["Codeforces"])
+router.include_router(practice_router, prefix="/practice", tags=["Practice & Submissions"])
