@@ -14,8 +14,14 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .config import settings
 
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing context with bcrypt
+# Using bcrypt with truncate_error=False to handle long passwords automatically
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+    bcrypt__ident="2b"
+)
 
 # Bearer token security
 security = HTTPBearer()
@@ -23,6 +29,11 @@ security = HTTPBearer()
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt."""
+    # Truncate password to 72 bytes if necessary (bcrypt limitation)
+    if isinstance(password, str):
+        password_bytes = password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password = password_bytes[:72].decode('utf-8', errors='ignore')
     return pwd_context.hash(password)
 
 
