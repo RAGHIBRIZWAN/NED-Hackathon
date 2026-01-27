@@ -16,6 +16,7 @@ from app.models.mcq import MCQQuestion, MCQAttempt
 from app.models.gamification import UserRewards, Badge, Achievement
 from app.models.contest import Contest, ContestParticipation
 from app.models.proctoring import ExamSession, ProctoringEvent
+from app.models.notification import Notification
 
 
 # Global database client
@@ -60,6 +61,7 @@ async def connect_db():
                 ContestParticipation,
                 ExamSession,
                 ProctoringEvent,
+                Notification,
             ]
         )
         

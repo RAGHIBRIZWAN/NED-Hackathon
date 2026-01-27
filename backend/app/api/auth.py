@@ -4,9 +4,10 @@ Authentication API Routes
 User registration, login, and profile management.
 """
 
+import base64
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File
 from pydantic import BaseModel, EmailStr, Field
 
 from app.core.security import (
@@ -17,6 +18,7 @@ from app.core.security import (
     decode_token,
     get_current_user
 )
+from app.core.config import settings
 from app.models.user import User, UserPreferences, UserStats
 from app.models.gamification import UserRewards
 
@@ -31,8 +33,7 @@ class RegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=30)
     password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=2, max_length=100)
-    programming_language: str = "python"
-    instruction_language: str = "en"
+    # Removed language selection - will use defaults
 
 
 class LoginRequest(BaseModel):
@@ -99,15 +100,19 @@ async def register(request: RegisterRequest):
             detail="Username already taken"
         )
     
-    # Create user
+    # Auto-detect admin role based on email
+    user_role = "admin" if request.email == settings.ADMIN_EMAIL else "user"
+    
+    # Create user with simplified defaults
     user = User(
         email=request.email,
         username=request.username,
         hashed_password=hash_password(request.password),
         full_name=request.full_name,
+        role=user_role,
         preferences=UserPreferences(
-            programming_language=request.programming_language,
-            instruction_language=request.instruction_language
+            programming_language="python",
+            instruction_language="en"
         ),
         stats=UserStats()
     )
@@ -134,8 +139,11 @@ async def register(request: RegisterRequest):
             "email": user.email,
             "username": user.username,
             "full_name": user.full_name,
+            "role": user.role,
             "level": user.level,
             "coins": user.coins,
+            "avatar_url": user.avatar_url,
+            "profile_picture": user.profile_picture,
             "preferences": user.preferences.dict()
         }
     )
@@ -189,10 +197,13 @@ async def login(request: LoginRequest):
             "email": user.email,
             "username": user.username,
             "full_name": user.full_name,
+            "role": user.role,
             "level": user.level,
             "xp": user.xp,
             "coins": user.coins,
             "rating": user.rating,
+            "avatar_url": user.avatar_url,
+            "profile_picture": user.profile_picture,
             "preferences": user.preferences.dict(),
             "stats": user.stats.dict()
         }
@@ -342,3 +353,56 @@ async def update_preferences(
     await user.save()
     
     return {"message": "Preferences updated successfully", "preferences": user.preferences.dict()}
+
+
+@router.post("/me/profile-picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Upload a profile picture for the current user.
+    
+    - Accepts JPG, JPEG, PNG, GIF formats
+    - Maximum file size: 5MB
+    - Stores as base64 in the database
+    """
+    user = await User.get(current_user["user_id"])
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/gif"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type. Allowed: JPG, PNG, GIF"
+        )
+    
+    # Read file content
+    contents = await file.read()
+    
+    # Validate file size (5MB max)
+    max_size = 5 * 1024 * 1024
+    if len(contents) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File too large. Maximum size is 5MB"
+        )
+    
+    # Convert to base64
+    base64_image = base64.b64encode(contents).decode("utf-8")
+    profile_picture_url = f"data:{file.content_type};base64,{base64_image}"
+    
+    # Update user profile
+    user.profile_picture = profile_picture_url
+    user.updated_at = datetime.utcnow()
+    await user.save()
+    
+    return {
+        "message": "Profile picture uploaded successfully",
+        "profile_picture": profile_picture_url
+    }

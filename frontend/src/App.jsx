@@ -18,6 +18,8 @@ import Contest from './pages/Contest';
 import Profile from './pages/Profile';
 import Leaderboard from './pages/Leaderboard';
 import Shop from './pages/Shop';
+import Admin from './pages/Admin';
+import Practice from './pages/Practice';
 
 function App() {
   const { isAuthenticated } = useAuthStore();
@@ -44,6 +46,8 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/shop" element={<Shop />} />
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/practice" element={<Practice />} />
       </Route>
 
       {/* Catch all */}

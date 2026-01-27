@@ -50,7 +50,7 @@ const Shop = () => {
             <ShoppingBag className="text-purple-400" />
             {t('shop.title')}
           </h1>
-          <p className="text-gray-400 mt-1">Spend your coins on themes and rewards</p>
+          <p className="text-gray-400 mt-1">{t('shop.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 rounded-lg">
           <span className="text-2xl">🪙</span>
@@ -62,7 +62,7 @@ const Shop = () => {
       <div className="mb-12">
         <div className="flex items-center gap-2 mb-6">
           <Palette className="text-purple-400" size={24} />
-          <h2 className="text-xl font-bold text-white">Themes</h2>
+          <h2 className="text-xl font-bold text-white">{t('shop.themes')}</h2>
         </div>
 
         {isLoading ? (
@@ -114,7 +114,7 @@ const Shop = () => {
 
                     {isUnlocked ? (
                       <button className="w-full py-2 bg-green-500/20 text-green-400 rounded-lg font-semibold">
-                        Owned
+                        {t('shop.owned')}
                       </button>
                     ) : (
                       <button
@@ -142,7 +142,7 @@ const Shop = () => {
       <div>
         <div className="flex items-center gap-2 mb-6">
           <Star className="text-yellow-400" size={24} />
-          <h2 className="text-xl font-bold text-white">Power-ups</h2>
+          <h2 className="text-xl font-bold text-white">{t('shop.powerups')}</h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
@@ -199,7 +199,9 @@ const Shop = () => {
         transition={{ delay: 0.5 }}
         className="mt-12 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-6"
       >
-        <h3 className="font-bold text-white mb-4">💰 How to Earn Coins</h3>
+        <h3 className="font-bold text-white mb-4">
+          💰 How to Earn Coins
+        </h3>
         <div className="grid md:grid-cols-4 gap-4">
           <div className="text-center">
             <p className="text-yellow-400 font-bold text-xl">+10</p>

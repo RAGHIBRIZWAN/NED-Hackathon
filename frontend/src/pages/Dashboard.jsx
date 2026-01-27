@@ -12,20 +12,68 @@ import {
   ArrowRight,
   Clock,
   Target,
-  Gift
+  Gift,
+  GitBranch,
+  Database
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useGamificationStore } from '../stores/gamificationStore';
 import { lessonsAPI, gamifyAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
+// Static module definitions for the new course structure
+const MODULES = [
+  {
+    id: 'programming-fundamentals',
+    name: 'Programming Fundamentals',
+    name_ur: 'پروگرامنگ کے بنیادی اصول',
+    description: 'Variables, loops, conditions & functions',
+    icon: '💻',
+    color: 'from-blue-500 to-cyan-500',
+    lessons: 24,
+    progress: 65
+  },
+  {
+    id: 'oop',
+    name: 'Object-Oriented Programming',
+    name_ur: 'آبجیکٹ اورینٹڈ پروگرامنگ',
+    description: 'Classes, inheritance & polymorphism',
+    icon: '🧩',
+    color: 'from-purple-500 to-pink-500',
+    lessons: 18,
+    progress: 30
+  },
+  {
+    id: 'data-structures',
+    name: 'Data Structures & Algorithms',
+    name_ur: 'ڈیٹا سٹرکچرز اور الگورتھمز',
+    description: 'Arrays, trees, graphs & sorting',
+    icon: '🌳',
+    color: 'from-green-500 to-emerald-500',
+    lessons: 22,
+    progress: 10
+  },
+  {
+    id: 'competitive-programming',
+    name: 'Competitive Programming',
+    name_ur: 'مسابقتی پروگرامنگ',
+    description: 'Advanced algorithms for contests',
+    icon: '🏆',
+    color: 'from-yellow-500 to-orange-500',
+    lessons: 30,
+    progress: 0
+  }
+];
+
 const Dashboard = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const { 
     level, xp, xpToNextLevel, coins, currentStreak,
     updateGamification 
   } = useGamificationStore();
+  
+  const isUrdu = i18n.language === 'ur';
 
   // Fetch gamification data
   const { data: gamifyData } = useQuery({
@@ -37,12 +85,6 @@ const Dashboard = () => {
   const { data: progressData } = useQuery({
     queryKey: ['userProgress'],
     queryFn: () => lessonsAPI.getUserProgress(),
-  });
-
-  // Fetch courses
-  const { data: coursesData } = useQuery({
-    queryKey: ['courses'],
-    queryFn: () => lessonsAPI.getCourses(),
   });
 
   useEffect(() => {
@@ -64,7 +106,6 @@ const Dashboard = () => {
     }
   };
 
-  const courses = coursesData?.data?.courses || [];
   const progress = progressData?.data || {};
 
   const quickActions = [
@@ -262,37 +303,44 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Courses */}
+        {/* Learning Modules */}
         <div>
-          <h2 className="text-xl font-bold text-white mb-4">Your Courses</h2>
+          <h2 className="text-xl font-bold text-white mb-4">
+            {isUrdu ? 'سیکھنے کے ماڈیولز' : 'Learning Modules'}
+          </h2>
           <div className="space-y-3">
-            {courses.map((course, index) => (
+            {MODULES.map((module, index) => (
               <motion.div
-                key={course.id}
+                key={module.id}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
                 <Link
-                  to={`/courses?course=${course.id}`}
-                  className="flex items-center gap-4 p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-gray-600 transition-colors"
+                  to={`/courses?module=${module.id}&mode=practice`}
+                  className="flex items-center gap-4 p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-gray-600 transition-colors group"
                 >
-                  <div className="text-3xl">{course.icon}</div>
-                  <div className="flex-1">
-                    <h3 className="text-white font-semibold">{course.name}</h3>
-                    <p className="text-gray-400 text-sm">
-                      {course.total_lessons} lessons • {course.difficulty}
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${module.color} flex items-center justify-center text-2xl`}>
+                    {module.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-semibold truncate">
+                      {isUrdu ? module.name_ur : module.name}
+                    </h3>
+                    <p className="text-gray-400 text-sm truncate">
+                      {module.lessons} lessons • {module.description}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <div className="w-12 h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="text-right flex-shrink-0">
+                    <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-gradient-to-r from-blue-500 to-purple-600"
-                        style={{ width: '30%' }}
+                        className={`h-full bg-gradient-to-r ${module.color}`}
+                        style={{ width: `${module.progress}%` }}
                       />
                     </div>
-                    <span className="text-xs text-gray-500">30%</span>
+                    <span className="text-xs text-gray-500">{module.progress}%</span>
                   </div>
+                  <ArrowRight className="text-gray-500 group-hover:text-white transition-colors flex-shrink-0" size={20} />
                 </Link>
               </motion.div>
             ))}

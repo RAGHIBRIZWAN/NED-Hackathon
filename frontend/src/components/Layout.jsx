@@ -12,31 +12,37 @@ import {
   Star,
   Flame,
   ShoppingBag,
-  Globe
+  Shield,
+  Bell,
+  Code
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
-import { useSettingsStore } from '../stores/settingsStore';
 import { useGamificationStore } from '../stores/gamificationStore';
 
 const Layout = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { instructionLanguage, setInstructionLanguage } = useSettingsStore();
   const { level, xp, xpToNextLevel, coins, currentStreak } = useGamificationStore();
 
-  const navItems = [
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin';
+
+  // Base navigation items
+  const baseNavItems = [
     { path: '/dashboard', icon: Home, label: t('nav.home') },
     { path: '/courses', icon: BookOpen, label: t('nav.learn') },
+    { path: '/practice', icon: Code, label: t('nav.practice') },
     { path: '/compete', icon: Trophy, label: t('nav.compete') },
     { path: '/leaderboard', icon: Star, label: t('compete.leaderboard') },
-    { path: '/shop', icon: ShoppingBag, label: 'Shop' },
+    { path: '/shop', icon: ShoppingBag, label: t('nav.shop') },
     { path: '/profile', icon: User, label: t('nav.profile') },
   ];
 
-  const toggleLanguage = () => {
-    setInstructionLanguage(instructionLanguage === 'en' ? 'ur' : 'en');
-  };
+  // Add Admin tab if user is admin
+  const navItems = isAdmin 
+    ? [...baseNavItems.slice(0, -1), { path: '/admin', icon: Shield, label: t('nav.admin') }, baseNavItems[baseNavItems.length - 1]]
+    : baseNavItems;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">
@@ -55,11 +61,26 @@ const Layout = () => {
         {/* User Stats */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <span className="text-lg font-bold">{user?.username?.[0]?.toUpperCase() || 'U'}</span>
-            </div>
+            {user?.profile_picture || user?.avatar_url ? (
+              <img 
+                src={user.profile_picture || user.avatar_url} 
+                alt={user?.username}
+                className="w-12 h-12 rounded-full object-cover border-2 border-purple-500"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <span className="text-lg font-bold">{user?.username?.[0]?.toUpperCase() || 'U'}</span>
+              </div>
+            )}
             <div>
-              <p className="font-medium">{user?.username || 'User'}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium">{user?.username || 'User'}</p>
+                {isAdmin && (
+                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-full">
+                    Admin
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-gray-400">Level {level}</p>
             </div>
           </div>
@@ -118,16 +139,7 @@ const Layout = () => {
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-gray-700 space-y-2">
-          {/* Language Toggle */}
-          <button
-            onClick={toggleLanguage}
-            className="flex items-center gap-3 px-4 py-2 w-full text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <Globe size={20} />
-            <span>{instructionLanguage === 'en' ? 'اردو' : 'English'}</span>
-          </button>
-          
+        <div className="p-4 border-t border-gray-700">
           {/* Logout */}
           <button
             onClick={logout}

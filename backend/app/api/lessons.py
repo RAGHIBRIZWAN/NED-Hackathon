@@ -67,37 +67,48 @@ async def get_courses():
     return {
         "courses": [
             {
-                "id": "python_basics",
-                "name": "Python Fundamentals",
-                "name_ur": "پائتھون کی بنیادی باتیں",
-                "description": "Learn Python from scratch with interactive lessons",
-                "description_ur": "انٹرایکٹو اسباق کے ساتھ شروع سے پائتھون سیکھیں",
-                "language": "python",
-                "total_lessons": 25,
+                "id": "programming-fundamentals",
+                "name": "Programming Fundamentals",
+                "name_ur": "پروگرامنگ کے بنیادی اصول",
+                "description": "Master the basics of programming with variables, loops, conditions, and functions",
+                "description_ur": "ویری ایبلز، لوپس، کنڈیشنز اور فنکشنز کے ساتھ پروگرامنگ کی بنیادی باتیں سیکھیں",
+                "total_lessons": 24,
                 "difficulty": "beginner",
-                "icon": "🐍"
+                "icon": "💻",
+                "color": "from-blue-500 to-cyan-500"
             },
             {
-                "id": "cpp_basics",
-                "name": "C++ Fundamentals",
-                "name_ur": "سی پلس پلس کی بنیادی باتیں",
-                "description": "Master C++ programming with hands-on practice",
-                "description_ur": "عملی مشق کے ساتھ سی پلس پلس پروگرامنگ میں مہارت حاصل کریں",
-                "language": "cpp",
+                "id": "oop",
+                "name": "Object-Oriented Programming",
+                "name_ur": "آبجیکٹ اورینٹڈ پروگرامنگ",
+                "description": "Learn classes, objects, inheritance, polymorphism and encapsulation",
+                "description_ur": "کلاسز، آبجیکٹس، وراثت، پولی مورفزم اور انکیپسولیشن سیکھیں",
+                "total_lessons": 18,
+                "difficulty": "intermediate",
+                "icon": "🧩",
+                "color": "from-purple-500 to-pink-500"
+            },
+            {
+                "id": "data-structures",
+                "name": "Data Structures & Algorithms",
+                "name_ur": "ڈیٹا سٹرکچرز اور الگورتھمز",
+                "description": "Understand arrays, linked lists, trees, graphs, sorting and searching",
+                "description_ur": "ارے، لنکڈ لسٹس، ٹریز، گرافس، ترتیب اور تلاش کو سمجھیں",
+                "total_lessons": 22,
+                "difficulty": "intermediate",
+                "icon": "🌳",
+                "color": "from-green-500 to-emerald-500"
+            },
+            {
+                "id": "competitive-programming",
+                "name": "Competitive Programming",
+                "name_ur": "مسابقتی پروگرامنگ",
+                "description": "Advanced algorithms and problem-solving techniques for contests",
+                "description_ur": "مقابلوں کے لیے ایڈوانسڈ الگورتھمز اور مسئلہ حل کرنے کی تکنیکیں",
                 "total_lessons": 30,
-                "difficulty": "beginner",
-                "icon": "⚡"
-            },
-            {
-                "id": "javascript_basics",
-                "name": "JavaScript Fundamentals",
-                "name_ur": "جاوا اسکرپٹ کی بنیادی باتیں",
-                "description": "Build dynamic web applications with JavaScript",
-                "description_ur": "جاوا اسکرپٹ کے ساتھ متحرک ویب ایپلیکیشنز بنائیں",
-                "language": "javascript",
-                "total_lessons": 28,
-                "difficulty": "beginner",
-                "icon": "🌐"
+                "difficulty": "advanced",
+                "icon": "🏆",
+                "color": "from-yellow-500 to-orange-500"
             }
         ]
     }
@@ -109,41 +120,47 @@ async def get_course_modules(course_id: str):
     Get modules for a specific course.
     """
     modules = {
-        "python_basics": [
-            {"id": "intro", "name": "Introduction to Python", "name_ur": "پائتھون کا تعارف", "order": 1},
+        "programming-fundamentals": [
+            {"id": "intro", "name": "Introduction to Programming", "name_ur": "پروگرامنگ کا تعارف", "order": 1},
             {"id": "variables", "name": "Variables & Data Types", "name_ur": "متغیرات اور ڈیٹا کی اقسام", "order": 2},
             {"id": "operators", "name": "Operators", "name_ur": "آپریٹرز", "order": 3},
             {"id": "conditionals", "name": "Conditional Statements", "name_ur": "شرطی بیانات", "order": 4},
             {"id": "loops", "name": "Loops", "name_ur": "لوپس", "order": 5},
             {"id": "functions", "name": "Functions", "name_ur": "فنکشنز", "order": 6},
-            {"id": "lists", "name": "Lists & Tuples", "name_ur": "فہرستیں اور ٹپلز", "order": 7},
-            {"id": "dictionaries", "name": "Dictionaries", "name_ur": "ڈکشنریز", "order": 8},
-            {"id": "strings", "name": "String Operations", "name_ur": "سٹرنگ آپریشنز", "order": 9},
-            {"id": "files", "name": "File Handling", "name_ur": "فائل ہینڈلنگ", "order": 10},
+            {"id": "arrays", "name": "Arrays & Lists", "name_ur": "ارے اور فہرستیں", "order": 7},
+            {"id": "strings", "name": "String Operations", "name_ur": "سٹرنگ آپریشنز", "order": 8},
         ],
-        "cpp_basics": [
-            {"id": "intro", "name": "Introduction to C++", "name_ur": "سی پلس پلس کا تعارف", "order": 1},
-            {"id": "variables", "name": "Variables & Data Types", "name_ur": "متغیرات اور ڈیٹا کی اقسام", "order": 2},
-            {"id": "operators", "name": "Operators", "name_ur": "آپریٹرز", "order": 3},
-            {"id": "conditionals", "name": "Conditional Statements", "name_ur": "شرطی بیانات", "order": 4},
-            {"id": "loops", "name": "Loops", "name_ur": "لوپس", "order": 5},
-            {"id": "functions", "name": "Functions", "name_ur": "فنکشنز", "order": 6},
-            {"id": "arrays", "name": "Arrays", "name_ur": "ارے", "order": 7},
-            {"id": "pointers", "name": "Pointers", "name_ur": "پوائنٹرز", "order": 8},
-            {"id": "strings", "name": "Strings", "name_ur": "سٹرنگز", "order": 9},
-            {"id": "classes", "name": "Classes & Objects", "name_ur": "کلاسز اور آبجیکٹس", "order": 10},
+        "oop": [
+            {"id": "intro_oop", "name": "Introduction to OOP", "name_ur": "OOP کا تعارف", "order": 1},
+            {"id": "classes", "name": "Classes & Objects", "name_ur": "کلاسز اور آبجیکٹس", "order": 2},
+            {"id": "constructors", "name": "Constructors & Destructors", "name_ur": "کنسٹرکٹرز اور ڈیسٹرکٹرز", "order": 3},
+            {"id": "inheritance", "name": "Inheritance", "name_ur": "وراثت", "order": 4},
+            {"id": "polymorphism", "name": "Polymorphism", "name_ur": "پولی مورفزم", "order": 5},
+            {"id": "encapsulation", "name": "Encapsulation", "name_ur": "انکیپسولیشن", "order": 6},
+            {"id": "abstraction", "name": "Abstraction", "name_ur": "تجرید", "order": 7},
+            {"id": "interfaces", "name": "Interfaces", "name_ur": "انٹرفیسز", "order": 8},
         ],
-        "javascript_basics": [
-            {"id": "intro", "name": "Introduction to JavaScript", "name_ur": "جاوا اسکرپٹ کا تعارف", "order": 1},
-            {"id": "variables", "name": "Variables & Data Types", "name_ur": "متغیرات اور ڈیٹا کی اقسام", "order": 2},
-            {"id": "operators", "name": "Operators", "name_ur": "آپریٹرز", "order": 3},
-            {"id": "conditionals", "name": "Conditional Statements", "name_ur": "شرطی بیانات", "order": 4},
-            {"id": "loops", "name": "Loops", "name_ur": "لوپس", "order": 5},
-            {"id": "functions", "name": "Functions", "name_ur": "فنکشنز", "order": 6},
-            {"id": "arrays", "name": "Arrays", "name_ur": "ارے", "order": 7},
-            {"id": "objects", "name": "Objects", "name_ur": "آبجیکٹس", "order": 8},
-            {"id": "dom", "name": "DOM Manipulation", "name_ur": "ڈوم مینیپولیشن", "order": 9},
-            {"id": "async", "name": "Async JavaScript", "name_ur": "ایسنک جاوا اسکرپٹ", "order": 10},
+        "data-structures": [
+            {"id": "arrays_advanced", "name": "Arrays & Strings", "name_ur": "ارے اور سٹرنگز", "order": 1},
+            {"id": "linked_lists", "name": "Linked Lists", "name_ur": "لنکڈ لسٹس", "order": 2},
+            {"id": "stacks", "name": "Stacks", "name_ur": "سٹیکس", "order": 3},
+            {"id": "queues", "name": "Queues", "name_ur": "کیوز", "order": 4},
+            {"id": "trees", "name": "Trees", "name_ur": "ٹریز", "order": 5},
+            {"id": "graphs", "name": "Graphs", "name_ur": "گرافس", "order": 6},
+            {"id": "hashing", "name": "Hash Tables", "name_ur": "ہیش ٹیبلز", "order": 7},
+            {"id": "sorting", "name": "Sorting Algorithms", "name_ur": "ترتیب کے الگورتھمز", "order": 8},
+            {"id": "searching", "name": "Searching Algorithms", "name_ur": "تلاش کے الگورتھمز", "order": 9},
+        ],
+        "competitive-programming": [
+            {"id": "cp_intro", "name": "Introduction to CP", "name_ur": "CP کا تعارف", "order": 1},
+            {"id": "time_complexity", "name": "Time & Space Complexity", "name_ur": "وقت اور جگہ کی پیچیدگی", "order": 2},
+            {"id": "binary_search", "name": "Binary Search", "name_ur": "بائنری سرچ", "order": 3},
+            {"id": "two_pointers", "name": "Two Pointers", "name_ur": "دو پوائنٹرز", "order": 4},
+            {"id": "dp_basics", "name": "Dynamic Programming Basics", "name_ur": "ڈائنامک پروگرامنگ کی بنیاد", "order": 5},
+            {"id": "greedy", "name": "Greedy Algorithms", "name_ur": "گریڈی الگورتھمز", "order": 6},
+            {"id": "graph_algorithms", "name": "Graph Algorithms", "name_ur": "گراف الگورتھمز", "order": 7},
+            {"id": "number_theory", "name": "Number Theory", "name_ur": "نمبر تھیوری", "order": 8},
+            {"id": "bit_manipulation", "name": "Bit Manipulation", "name_ur": "بٹ مینیپولیشن", "order": 9},
         ]
     }
     

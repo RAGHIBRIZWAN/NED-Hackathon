@@ -6,8 +6,15 @@ User document model with profile, preferences, and progress tracking.
 
 from datetime import datetime
 from typing import Optional, List
+from enum import Enum
 from beanie import Document
 from pydantic import Field, EmailStr, BaseModel
+
+
+class UserRole(str, Enum):
+    """User role enumeration."""
+    ADMIN = "admin"
+    USER = "user"
 
 
 class UserPreferences(BaseModel):
@@ -48,12 +55,13 @@ class User(Document):
     # Profile
     full_name: str
     avatar_url: Optional[str] = None
+    profile_picture: Optional[str] = None  # Base64 or URL for profile picture
     bio: Optional[str] = None
     institution: Optional[str] = None
     country: str = "Pakistan"
     
-    # Role & Status
-    role: str = Field(default="student")  # student, instructor, admin
+    # Role & Status (admin/user enum)
+    role: str = Field(default="user")  # user, admin
     is_active: bool = True
     is_verified: bool = False
     

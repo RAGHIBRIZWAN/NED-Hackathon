@@ -11,9 +11,21 @@ from pydantic import Field, BaseModel
 
 
 class ContestProblem(BaseModel):
-    """Problem in a contest."""
-    challenge_id: str
-    order: int  # A, B, C ordering
+    """Problem in a contest - can be internal or from Codeforces."""
+    # Internal problem reference (optional)
+    challenge_id: Optional[str] = None
+    
+    # Codeforces problem reference (optional)
+    title: Optional[str] = None
+    codeforces_id: Optional[str] = None  # e.g. "1234A"
+    codeforces_contest_id: Optional[int] = None
+    codeforces_index: Optional[str] = None  # e.g. "A"
+    codeforces_rating: Optional[int] = None
+    codeforces_tags: List[str] = []
+    codeforces_url: Optional[str] = None
+    
+    # Contest ordering
+    order: int = 1  # A=1, B=2, C=3, etc.
     points: int = 100
 
 
@@ -24,10 +36,8 @@ class Contest(Document):
     
     # Basic Info
     title: str
-    title_ur: Optional[str] = None
     slug: str = Field(..., index=True)
     description: str
-    description_ur: Optional[str] = None
     
     # Problems
     problems: List[ContestProblem] = Field(default_factory=list)

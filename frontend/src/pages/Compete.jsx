@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Trophy, 
   Clock, 
@@ -11,24 +11,98 @@ import {
   ArrowRight,
   Star,
   Zap,
-  Lock
+  Lock,
+  CheckCircle,
+  Timer,
+  ExternalLink,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import { competeAPI } from '../services/api';
+import api from '../services/api';
+import { useAuthStore } from '../stores/authStore';
+import toast from 'react-hot-toast';
 
 const Compete = () => {
   const { t } = useTranslation();
-  const [filter, setFilter] = useState('all'); // all, upcoming, active, past
+  const { user } = useAuthStore();
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('upcoming');
+  const [countdowns, setCountdowns] = useState({});
 
   // Fetch contests
   const { data: contestsData, isLoading } = useQuery({
-    queryKey: ['contests', filter],
-    queryFn: () => competeAPI.getContests(filter !== 'all' ? filter : undefined),
+    queryKey: ['contests', activeTab],
+    queryFn: async () => {
+      const statusMap = {
+        upcoming: 'upcoming',
+        ongoing: 'ongoing',
+        past: 'completed'
+      };
+      const response = await api.get(`/compete/contests?status=${statusMap[activeTab]}`);
+      return response.data;
+    },
   });
 
-  const contests = contestsData?.data?.contests || [];
+  // Fetch user's registrations
+  const { data: registrationsData } = useQuery({
+    queryKey: ['myRegistrations'],
+    queryFn: async () => {
+      const response = await api.get('/compete/my-registrations');
+      return response.data;
+    },
+  });
+
+  const registeredContestIds = registrationsData?.registrations?.map(r => r.contest_id) || [];
+
+  // Register for contest mutation
+  const registerMutation = useMutation({
+    mutationFn: (contestId) => api.post(`/compete/contests/${contestId}/register`),
+    onSuccess: () => {
+      toast.success('Successfully registered for contest!');
+      queryClient.invalidateQueries(['contests']);
+      queryClient.invalidateQueries(['myRegistrations']);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || 'Failed to register');
+    }
+  });
+
+  const contests = contestsData?.contests || [];
+
+  // Countdown timer logic
+  useEffect(() => {
+    if (activeTab !== 'upcoming') return;
+
+    const updateCountdowns = () => {
+      const newCountdowns = {};
+      contests.forEach(contest => {
+        const startTime = new Date(contest.start_time).getTime();
+        const now = Date.now();
+        const diff = startTime - now;
+
+        if (diff > 0) {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+          newCountdowns[contest.id] = { days, hours, minutes, seconds };
+        } else {
+          newCountdowns[contest.id] = null;
+        }
+      });
+      setCountdowns(newCountdowns);
+    };
+
+    updateCountdowns();
+    const interval = setInterval(updateCountdowns, 1000);
+    return () => clearInterval(interval);
+  }, [contests, activeTab]);
 
   const formatDate = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('en-US', {
+      weekday: 'short',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -36,33 +110,70 @@ const Compete = () => {
     });
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'upcoming': return 'bg-blue-500/20 text-blue-400';
-      case 'active': return 'bg-green-500/20 text-green-400';
-      case 'ended': return 'bg-gray-500/20 text-gray-400';
-      default: return 'bg-gray-500/20 text-gray-400';
+  const handleRegister = (contestId) => {
+    if (registeredContestIds.includes(contestId)) {
+      toast.error('You are already registered for this contest');
+      return;
     }
+    registerMutation.mutate(contestId);
+  };
+
+  const isRegistered = (contestId) => registeredContestIds.includes(contestId);
+
+  const tabs = [
+    { id: 'upcoming', label: 'Upcoming', icon: Clock, color: 'blue' },
+    { id: 'ongoing', label: 'Ongoing', icon: Zap, color: 'green' },
+    { id: 'past', label: 'Past', icon: Trophy, color: 'gray' },
+  ];
+
+  const CountdownTimer = ({ countdown }) => {
+    if (!countdown) return null;
+
+    const { days, hours, minutes, seconds } = countdown;
+    
+    return (
+      <div className="flex items-center gap-1 text-sm">
+        {days > 0 && (
+          <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-mono">
+            {days}d
+          </span>
+        )}
+        <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-mono">
+          {String(hours).padStart(2, '0')}h
+        </span>
+        <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-mono">
+          {String(minutes).padStart(2, '0')}m
+        </span>
+        <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-mono">
+          {String(seconds).padStart(2, '0')}s
+        </span>
+      </div>
+    );
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 min-h-screen bg-gray-900">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
           <Trophy className="text-yellow-400" />
           {t('compete.title')}
         </h1>
-        <p className="text-gray-400 mt-1">{t('compete.subtitle')}</p>
-      </div>
+        <p className="text-gray-400 mt-2">{t('compete.subtitle')}</p>
+      </motion.div>
 
       {/* User Rating Card */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
         className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-6 mb-8"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <p className="text-purple-200 text-sm mb-1">Your Rating</p>
             <div className="flex items-center gap-3">
@@ -74,120 +185,205 @@ const Compete = () => {
           </div>
           <div className="text-right">
             <p className="text-purple-200 text-sm mb-1">Contests Participated</p>
-            <span className="text-2xl font-bold text-white">0</span>
+            <span className="text-2xl font-bold text-white">{registeredContestIds.length}</span>
           </div>
         </div>
       </motion.div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6">
-        {['all', 'upcoming', 'active', 'past'].map((f) => (
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6 border-b border-gray-700 pb-4">
+        {tabs.map((tab) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              filter === f
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-5 py-3 rounded-lg transition-all ${
+              activeTab === tab.id
+                ? `bg-${tab.color}-600 text-white shadow-lg shadow-${tab.color}-500/20`
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
             }`}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            <tab.icon size={18} />
+            <span className="font-medium">{tab.label}</span>
+            {contestsData && (
+              <span className={`px-2 py-0.5 rounded-full text-xs ${
+                activeTab === tab.id
+                  ? 'bg-white/20 text-white'
+                  : 'bg-gray-700 text-gray-400'
+              }`}>
+                {contests.length}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      {/* Contests Grid */}
+      {/* Contests List */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
         </div>
       ) : contests.length === 0 ? (
-        <div className="text-center py-12">
-          <Trophy size={48} className="mx-auto text-gray-600 mb-4" />
-          <p className="text-gray-400">No contests found</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-16 bg-gray-800/50 rounded-xl border border-gray-700"
+        >
+          {activeTab === 'upcoming' ? (
+            <>
+              <Clock size={48} className="mx-auto text-blue-500/50 mb-4" />
+              <p className="text-gray-400 text-lg">No upcoming contests</p>
+              <p className="text-gray-500 text-sm mt-1">Check back later for new contests!</p>
+            </>
+          ) : activeTab === 'ongoing' ? (
+            <>
+              <Zap size={48} className="mx-auto text-green-500/50 mb-4" />
+              <p className="text-gray-400 text-lg">No ongoing contests</p>
+              <p className="text-gray-500 text-sm mt-1">Register for upcoming contests!</p>
+            </>
+          ) : (
+            <>
+              <Trophy size={48} className="mx-auto text-gray-600 mb-4" />
+              <p className="text-gray-400 text-lg">No past contests</p>
+            </>
+          )}
+        </motion.div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-4">
           {contests.map((contest, index) => (
             <motion.div
               key={contest.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-colors"
+              transition={{ delay: index * 0.05 }}
+              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl overflow-hidden hover:border-gray-600 transition-all"
             >
               <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <span className={`text-xs px-2 py-1 rounded ${getStatusColor(contest.status)}`}>
-                      {contest.status}
-                    </span>
-                    <h3 className="text-lg font-bold text-white mt-2">{contest.title}</h3>
-                    {contest.title_ur && (
-                      <p className="text-gray-500 text-sm font-urdu">{contest.title_ur}</p>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  {/* Contest Info */}
+                  <div className="flex-1 min-w-[300px]">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-xl font-bold text-white">{contest.title}</h3>
+                      {contest.contest_type === 'rated' && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded text-xs">
+                          <Star size={12} />
+                          Rated
+                        </span>
+                      )}
+                      {isRegistered(contest.id) && activeTab === 'upcoming' && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-xs">
+                          <CheckCircle size={12} />
+                          Registered
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                      {contest.description}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar size={16} className="text-gray-500" />
+                        <span>{formatDate(contest.start_time)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={16} className="text-gray-500" />
+                        <span>{contest.duration_minutes} mins</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users size={16} className="text-gray-500" />
+                        <span>{contest.registered_count || 0} registered</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Trophy size={16} className="text-gray-500" />
+                        <span className="capitalize">{contest.difficulty}</span>
+                      </div>
+                    </div>
+
+                    {/* Problems Preview */}
+                    {contest.problems?.length > 0 && (
+                      <div className="flex items-center gap-2 mt-4">
+                        <span className="text-gray-500 text-xs">Problems:</span>
+                        {contest.problems.map((prob, i) => (
+                          <div
+                            key={i}
+                            className="w-8 h-8 bg-gray-700/70 rounded flex items-center justify-center text-gray-300 text-sm font-medium"
+                            title={prob.title || `Problem ${String.fromCharCode(65 + i)}`}
+                          >
+                            {String.fromCharCode(65 + i)}
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  {contest.is_rated && (
-                    <Star className="text-yellow-400" size={20} />
-                  )}
-                </div>
 
-                <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                  {contest.description}
-                </p>
+                  {/* Countdown / Action */}
+                  <div className="flex flex-col items-end gap-3">
+                    {activeTab === 'upcoming' && countdowns[contest.id] && (
+                      <div className="text-right">
+                        <p className="text-gray-500 text-xs mb-1">Starts in</p>
+                        <CountdownTimer countdown={countdowns[contest.id]} />
+                      </div>
+                    )}
 
-                <div className="space-y-2 text-sm text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} />
-                    <span>Starts: {formatDate(contest.start_time)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock size={16} />
-                    <span>Duration: {contest.duration_minutes} mins</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users size={16} />
-                    <span>{contest.participant_count || 0} participants</span>
-                  </div>
-                </div>
+                    {activeTab === 'ongoing' && (
+                      <div className="text-right">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm animate-pulse">
+                          <span className="w-2 h-2 bg-green-400 rounded-full" />
+                          Live Now
+                        </span>
+                      </div>
+                    )}
 
-                <div className="flex items-center gap-2 mt-4">
-                  {contest.problems?.map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-8 h-8 bg-gray-700 rounded flex items-center justify-center text-gray-400 text-sm"
-                    >
-                      {String.fromCharCode(65 + i)}
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      {activeTab === 'upcoming' && (
+                        isRegistered(contest.id) ? (
+                          <button
+                            disabled
+                            className="flex items-center gap-2 px-5 py-2.5 bg-green-500/20 text-green-400 rounded-lg cursor-default"
+                          >
+                            <CheckCircle size={18} />
+                            Registered
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleRegister(contest.id)}
+                            disabled={registerMutation.isPending}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50"
+                          >
+                            {registerMutation.isPending ? (
+                              <Loader2 size={18} className="animate-spin" />
+                            ) : (
+                              <CheckCircle size={18} />
+                            )}
+                            Register Now
+                          </button>
+                        )
+                      )}
+
+                      {activeTab === 'ongoing' && (
+                        <Link
+                          to={`/contest/${contest.id}`}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-500 transition-colors"
+                        >
+                          <Zap size={18} />
+                          Enter Contest
+                        </Link>
+                      )}
+
+                      {activeTab === 'past' && (
+                        <Link
+                          to={`/contest/${contest.id}`}
+                          className="flex items-center gap-2 px-5 py-2.5 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors"
+                        >
+                          View Results
+                          <ArrowRight size={18} />
+                        </Link>
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-
-              <div className="border-t border-gray-700 p-4">
-                {contest.status === 'active' ? (
-                  <Link
-                    to={`/contest/${contest.id}`}
-                    className="flex items-center justify-center gap-2 w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-500"
-                  >
-                    <Zap size={18} />
-                    Enter Contest
-                  </Link>
-                ) : contest.status === 'upcoming' ? (
-                  <button
-                    className="flex items-center justify-center gap-2 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500"
-                  >
-                    <Clock size={18} />
-                    Register
-                  </button>
-                ) : (
-                  <Link
-                    to={`/contest/${contest.id}`}
-                    className="flex items-center justify-center gap-2 w-full py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600"
-                  >
-                    View Results
-                    <ArrowRight size={18} />
-                  </Link>
-                )}
               </div>
             </motion.div>
           ))}
@@ -198,10 +394,10 @@ const Compete = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.3 }}
         className="mt-12 grid md:grid-cols-3 gap-6"
       >
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
           <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
             <Trophy className="text-blue-400" size={24} />
           </div>
@@ -211,7 +407,7 @@ const Compete = () => {
           </p>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
           <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center mb-4">
             <Star className="text-green-400" size={24} />
           </div>
@@ -221,7 +417,7 @@ const Compete = () => {
           </p>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
           <div className="w-12 h-12 bg-yellow-500/20 rounded-lg flex items-center justify-center mb-4">
             <Zap className="text-yellow-400" size={24} />
           </div>

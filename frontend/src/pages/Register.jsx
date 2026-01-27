@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, AtSign, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, AtSign, ArrowRight, Loader2, Upload } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import toast from 'react-hot-toast';
 
@@ -16,8 +16,6 @@ const Register = () => {
     username: '',
     full_name: '',
     password: '',
-    programming_language: 'python',
-    instruction_language: 'en',
   });
 
   const handleChange = (e) => {
@@ -141,39 +139,6 @@ const Register = () => {
                   className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   placeholder="••••••••"
                 />
-              </div>
-            </div>
-
-            {/* Language Selection */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-400 text-sm mb-2">
-                  Programming Language
-                </label>
-                <select
-                  name="programming_language"
-                  value={formData.programming_language}
-                  onChange={handleChange}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="python">🐍 Python</option>
-                  <option value="cpp">⚡ C++</option>
-                  <option value="javascript">🌐 JavaScript</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-gray-400 text-sm mb-2">
-                  Instruction Language
-                </label>
-                <select
-                  name="instruction_language"
-                  value={formData.instruction_language}
-                  onChange={handleChange}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="en">🇬🇧 English</option>
-                  <option value="ur">🇵🇰 اردو</option>
-                </select>
               </div>
             </div>
 

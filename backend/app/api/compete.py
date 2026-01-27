@@ -82,7 +82,7 @@ def calculate_contest_rating_change(
 
 @router.get("/contests")
 async def get_contests(
-    status_filter: Optional[str] = None,  # upcoming, ongoing, completed
+    status: Optional[str] = Query(None, description="Filter by status: upcoming, ongoing, completed"),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100)
 ):
@@ -91,8 +91,8 @@ async def get_contests(
     """
     query = {}
     
-    if status_filter:
-        query["status"] = status_filter
+    if status:
+        query["status"] = status
     
     skip = (page - 1) * limit
     contests = await Contest.find(query).sort("-start_time").skip(skip).limit(limit).to_list()
@@ -103,15 +103,24 @@ async def get_contests(
             {
                 "id": str(c.id),
                 "title": c.title,
-                "title_ur": c.title_ur,
                 "description": c.description,
                 "start_time": c.start_time,
                 "end_time": c.end_time,
                 "duration_minutes": c.duration_minutes,
                 "contest_type": c.contest_type,
+                "difficulty": c.difficulty,
                 "status": c.status,
                 "registered_count": c.registered_count,
-                "num_problems": len(c.problems)
+                "num_problems": len(c.problems),
+                "problems": [
+                    {
+                        "order": p.order,
+                        "title": p.title or p.codeforces_id,
+                        "codeforces_id": p.codeforces_id,
+                        "rating": p.codeforces_rating
+                    }
+                    for p in c.problems
+                ] if c.problems else []
             }
             for c in contests
         ],
@@ -176,6 +185,28 @@ async def get_contest(
         ]
     
     return response
+
+
+@router.get("/my-registrations")
+async def get_my_registrations(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get current user's contest registrations.
+    """
+    participations = await ContestParticipation.find({
+        "user_id": current_user["user_id"]
+    }).to_list()
+    
+    return {
+        "registrations": [
+            {
+                "contest_id": p.contest_id,
+                "registered_at": p.registered_at
+            }
+            for p in participations
+        ]
+    }
 
 
 @router.post("/contests/{contest_id}/register")

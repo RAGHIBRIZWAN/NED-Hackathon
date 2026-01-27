@@ -10,6 +10,11 @@ const resources = {
       "nav.practice": "Practice",
       "nav.compete": "Compete",
       "nav.profile": "Profile",
+      "nav.admin": "Admin",
+      "nav.dashboard": "Dashboard",
+      "nav.courses": "Courses",
+      "nav.leaderboard": "Leaderboard",
+      "nav.shop": "Shop",
       
       // Auth
       "auth.login": "Login",
@@ -19,15 +24,36 @@ const resources = {
       "auth.password": "Password",
       "auth.username": "Username",
       "auth.fullName": "Full Name",
+      "auth.welcomeBack": "Welcome Back",
+      "auth.createAccount": "Create Account",
+      "auth.noAccount": "Don't have an account?",
+      "auth.haveAccount": "Already have an account?",
       
       // Home
       "home.title": "Learn Programming with AI",
-      "home.subtitle": "Master C++, Python, and JavaScript with gamified lessons and bilingual AI tutoring",
+      "home.subtitle": "Master competitive programming with gamified lessons and AI tutoring",
       "home.getStarted": "Get Started",
       "home.features.learn": "Learn",
       "home.features.practice": "Practice",
       "home.features.compete": "Compete",
       "home.features.reward": "Reward",
+      
+      // Modules
+      "modules.title": "Learning Modules",
+      "modules.selectModule": "Select a module to start learning",
+      "modules.programmingFundamentals": "Programming Fundamentals",
+      "modules.oop": "Object-Oriented Programming",
+      "modules.dataStructures": "Data Structures",
+      "modules.competitiveProgramming": "Competitive Programming",
+      "modules.practice": "Practice",
+      "modules.quiz": "Quiz",
+      "modules.exam": "Exam",
+      "modules.contest": "Contest",
+      "modules.selectMode": "Select a learning mode",
+      "modules.back": "Back",
+      "modules.lessons": "lessons",
+      "modules.noContent": "No Content Yet",
+      "modules.comingSoon": "Content for this section is coming soon!",
       
       // Lessons
       "lessons.title": "Courses",
@@ -69,12 +95,37 @@ const resources = {
       
       // Competitions
       "compete.title": "Competitions",
+      "compete.subtitle": "Compete with others and climb the leaderboard",
       "compete.upcoming": "Upcoming",
       "compete.ongoing": "Ongoing",
+      "compete.past": "Past",
       "compete.completed": "Completed",
       "compete.register": "Register",
+      "compete.registered": "Registered",
       "compete.leaderboard": "Leaderboard",
       "compete.rating": "Rating",
+      "compete.enterContest": "Enter Contest",
+      "compete.viewResults": "View Results",
+      "compete.registrationClosed": "Registration Closed",
+      "compete.startsIn": "Starts in",
+      "compete.endsIn": "Ends in",
+      
+      // Admin
+      "admin.title": "Admin Dashboard",
+      "admin.overview": "Overview",
+      "admin.contests": "Contests",
+      "admin.users": "Users",
+      "admin.notifications": "Notifications",
+      "admin.createContest": "Create Contest",
+      "admin.totalUsers": "Total Users",
+      "admin.totalContests": "Total Contests",
+      "admin.activeToday": "Active Today",
+      "admin.upcomingContests": "Upcoming Contests",
+      "admin.broadcastNotification": "Broadcast Notification",
+      "admin.sendToAll": "Send to All Users",
+      "admin.searchProblems": "Search Codeforces Problems",
+      "admin.addProblem": "Add Problem",
+      "admin.selectedProblems": "Selected Problems",
       
       // Proctoring
       "proctor.examMode": "Exam Mode",
@@ -83,6 +134,44 @@ const resources = {
       "proctor.tabSwitch": "Tab switch detected",
       "proctor.faceNotDetected": "Face not detected",
       
+      // Shop
+      "shop.title": "Shop",
+      "shop.subtitle": "Spend your coins on themes and rewards",
+      "shop.themes": "Themes",
+      "shop.powerups": "Power-ups",
+      "shop.owned": "Owned",
+      "shop.notEnoughCoins": "Not enough coins!",
+      "shop.purchaseFailed": "Purchase failed",
+      "shop.unlocked": "theme unlocked!",
+      "shop.xpBoost": "XP Boost",
+      "shop.xpBoostDesc": "Double XP for 24 hours",
+      "shop.streakFreeze": "Streak Freeze",
+      "shop.streakFreezeDesc": "Protect your streak for one day",
+      "shop.hintToken": "Hint Token",
+      "shop.hintTokenDesc": "Get a hint on any challenge",
+      
+      // Profile
+      "profile.title": "Profile",
+      "profile.editProfile": "Edit Profile",
+      "profile.preferences": "Preferences",
+      "profile.programmingLanguage": "Programming Language",
+      "profile.badges": "Badges",
+      "profile.noBadges": "No badges earned yet. Keep learning!",
+      "profile.uploadPhoto": "Upload Photo",
+      "profile.changePhoto": "Change Photo",
+      
+      // Codeforces Practice
+      "practice.title": "Practice Problems",
+      "practice.subtitle": "Solve problems from Codeforces",
+      "practice.filterByRating": "Filter by Rating",
+      "practice.filterByTags": "Filter by Tags",
+      "practice.search": "Search problems...",
+      "practice.solvedBy": "Solved by",
+      "practice.solve": "Solve",
+      "practice.loading": "Loading problems...",
+      "practice.noProblems": "No problems found",
+      "practice.difficulty": "Difficulty",
+      
       // Common
       "common.loading": "Loading...",
       "common.error": "An error occurred",
@@ -90,96 +179,10 @@ const resources = {
       "common.cancel": "Cancel",
       "common.confirm": "Confirm",
       "common.success": "Success!",
-    }
-  },
-  ur: {
-    translation: {
-      // Navigation
-      "nav.home": "ہوم",
-      "nav.learn": "سیکھیں",
-      "nav.practice": "مشق",
-      "nav.compete": "مقابلہ",
-      "nav.profile": "پروفائل",
-      
-      // Auth
-      "auth.login": "لاگ ان",
-      "auth.register": "رجسٹر",
-      "auth.logout": "لاگ آؤٹ",
-      "auth.email": "ای میل",
-      "auth.password": "پاس ورڈ",
-      "auth.username": "صارف نام",
-      "auth.fullName": "پورا نام",
-      
-      // Home
-      "home.title": "AI کے ساتھ پروگرامنگ سیکھیں",
-      "home.subtitle": "گیمیفائیڈ اسباق اور دو لسانی AI ٹیوٹرنگ کے ساتھ C++، Python، اور JavaScript میں مہارت حاصل کریں",
-      "home.getStarted": "شروع کریں",
-      "home.features.learn": "سیکھیں",
-      "home.features.practice": "مشق کریں",
-      "home.features.compete": "مقابلہ کریں",
-      "home.features.reward": "انعام",
-      
-      // Lessons
-      "lessons.title": "کورسز",
-      "lessons.startLesson": "سبق شروع کریں",
-      "lessons.continueLesson": "جاری رکھیں",
-      "lessons.completed": "مکمل",
-      "lessons.progress": "پیشرفت",
-      
-      // Code Editor
-      "editor.run": "کوڈ چلائیں",
-      "editor.submit": "جمع کرائیں",
-      "editor.reset": "ری سیٹ",
-      "editor.language": "زبان",
-      "editor.output": "آؤٹ پٹ",
-      "editor.input": "ان پٹ",
-      
-      // AI Tutor
-      "ai.title": "AI ٹیوٹر",
-      "ai.askQuestion": "سوال پوچھیں...",
-      "ai.speak": "بولیں",
-      "ai.listening": "سن رہا ہے...",
-      "ai.thinking": "سوچ رہا ہے...",
-      
-      // MCQ
-      "mcq.title": "کوئز",
-      "mcq.question": "سوال",
-      "mcq.submit": "جواب جمع کرائیں",
-      "mcq.next": "اگلا سوال",
-      "mcq.result": "آپ کا سکور",
-      
-      // Gamification
-      "gamify.coins": "سکے",
-      "gamify.level": "درجہ",
-      "gamify.xp": "ایکس پی",
-      "gamify.streak": "دن کی سلسلہ",
-      "gamify.badges": "بیجز",
-      "gamify.achievements": "کامیابیاں",
-      "gamify.dailyReward": "روزانہ انعام حاصل کریں",
-      
-      // Competitions
-      "compete.title": "مقابلے",
-      "compete.upcoming": "آنے والے",
-      "compete.ongoing": "جاری",
-      "compete.completed": "مکمل",
-      "compete.register": "رجسٹر کریں",
-      "compete.leaderboard": "لیڈر بورڈ",
-      "compete.rating": "ریٹنگ",
-      
-      // Proctoring
-      "proctor.examMode": "امتحان موڈ",
-      "proctor.webcamRequired": "ویب کیم ضروری ہے",
-      "proctor.warning": "انتباہ",
-      "proctor.tabSwitch": "ٹیب سوئچ کا پتہ چلا",
-      "proctor.faceNotDetected": "چہرہ نہیں ملا",
-      
-      // Common
-      "common.loading": "لوڈ ہو رہا ہے...",
-      "common.error": "ایک خرابی پیش آ گئی",
-      "common.save": "محفوظ کریں",
-      "common.cancel": "منسوخ کریں",
-      "common.confirm": "تصدیق کریں",
-      "common.success": "کامیابی!",
+      "common.delete": "Delete",
+      "common.edit": "Edit",
+      "common.view": "View",
+      "common.close": "Close",
     }
   }
 };

@@ -61,6 +61,9 @@ export const authAPI = {
   getProfile: () => api.get('/auth/me'),
   updateProfile: (data) => api.put('/auth/me', data),
   updatePreferences: (data) => api.put('/auth/me/preferences', data),
+  uploadProfilePicture: (formData) => api.post('/auth/me/profile-picture', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
 };
 
 export const lessonsAPI = {
@@ -133,4 +136,32 @@ export const proctorAPI = {
   updateState: (sessionId, data) => api.put(`/proctor/sessions/${sessionId}/state`, data),
   endSession: (sessionId) => api.post(`/proctor/sessions/${sessionId}/end`),
   getSession: (sessionId) => api.get(`/proctor/sessions/${sessionId}`),
+};
+
+// Admin API
+export const adminAPI = {
+  // Stats
+  getStats: () => api.get('/admin/stats'),
+  
+  // Contests
+  getContests: () => api.get('/admin/contests'),
+  createContest: (data) => api.post('/admin/contests', data),
+  updateContest: (id, data) => api.put(`/admin/contests/${id}`, data),
+  deleteContest: (id) => api.delete(`/admin/contests/${id}`),
+  
+  // Users
+  getUsers: (params) => api.get('/admin/users', { params }),
+  updateUserRole: (userId, role) => api.put(`/admin/users/${userId}/role`, { role }),
+  
+  // Notifications
+  broadcastNotification: (data) => api.post('/admin/notifications/broadcast', data),
+};
+
+// Notifications API
+export const notificationsAPI = {
+  getNotifications: (params) => api.get('/notifications', { params }),
+  getUnreadCount: () => api.get('/notifications/unread/count'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/read-all'),
+  deleteNotification: (id) => api.delete(`/notifications/${id}`),
 };
