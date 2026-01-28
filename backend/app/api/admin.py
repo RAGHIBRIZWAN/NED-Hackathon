@@ -4,7 +4,7 @@ Admin API Routes
 Admin-only endpoints for contest management and platform administration.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
@@ -20,13 +20,11 @@ router = APIRouter()
 
 # ============ Schemas ============
 
-class CodeforcesProblemInput(BaseModel):
-    """Codeforces problem for contest."""
-    contest_id: int
-    index: str
+class SimpleProblemInput(BaseModel):
+    """Simple problem reference for contest."""
+    problem_id: str
     name: str
-    rating: Optional[int] = None
-    tags: List[str] = []
+    difficulty: str
 
 
 class CreateContestRequest(BaseModel):
@@ -39,7 +37,7 @@ class CreateContestRequest(BaseModel):
     contest_type: str = "rated"  # rated, unrated, practice
     is_public: bool = True
     max_participants: Optional[int] = None
-    problems: List[CodeforcesProblemInput] = []  # Codeforces problems
+    # Problems will be auto-selected from DSA problems  # Codeforces problems
 
 
 class ContestResponse(BaseModel):
@@ -113,10 +111,10 @@ async def create_contest(request: CreateContestRequest, admin: dict = Depends(ch
     # Generate slug from title
     import re
     slug = re.sub(r'[^a-z0-9]+', '-', request.title.lower()).strip('-')
-    slug = f"{slug}-{datetime.utcnow().strftime('%Y%m%d')}"
+    slug = f"{slug}-{datetime.now(timezone.utc).strftime('%Y%m%d')}"
     
     # Determine initial status
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if request.start_time > now:
         status_val = "upcoming"
     elif request.start_time <= now <= end_time:
@@ -124,20 +122,27 @@ async def create_contest(request: CreateContestRequest, admin: dict = Depends(ch
     else:
         status_val = "completed"
     
-    # Convert Codeforces problems to ContestProblem format
+    # Get random Competitive Programming problems
+    import random
+    from app.data.cp_problems import CP_PROBLEMS
+    
+    # Select 5 random problems from CP section
+    selected_problems = random.sample(CP_PROBLEMS, min(5, len(CP_PROBLEMS)))
+    
+    # Convert to ContestProblem format
     contest_problems = [
         ContestProblem(
-            title=prob.name,
-            codeforces_id=f"{prob.contest_id}{prob.index}",
-            codeforces_contest_id=prob.contest_id,
-            codeforces_index=prob.index,
-            codeforces_rating=prob.rating,
-            codeforces_tags=prob.tags,
-            codeforces_url=f"https://codeforces.com/problemset/problem/{prob.contest_id}/{prob.index}",
+            title=prob['name'],
+            description=prob['description'],
+            difficulty=prob['difficulty'],
+            input_format=prob.get('input_format', ''),
+            output_format=prob.get('output_format', ''),
+            examples=prob.get('examples', []),
+            test_cases=prob.get('test_cases', []),
             points=100,  # Default points
             order=i
         )
-        for i, prob in enumerate(request.problems)
+        for i, prob in enumerate(selected_problems)
     ]
     
     # Create contest

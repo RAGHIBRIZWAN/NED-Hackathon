@@ -15,8 +15,16 @@ class ContestProblem(BaseModel):
     # Internal problem reference (optional)
     challenge_id: Optional[str] = None
     
-    # Codeforces problem reference (optional)
+    # Problem details (for local problems)
     title: Optional[str] = None
+    description: Optional[str] = None
+    difficulty: Optional[str] = None
+    input_format: Optional[str] = None
+    output_format: Optional[str] = None
+    examples: List[dict] = []
+    test_cases: List[dict] = []
+    
+    # Codeforces problem reference (optional - legacy)
     codeforces_id: Optional[str] = None  # e.g. "1234A"
     codeforces_contest_id: Optional[int] = None
     codeforces_index: Optional[str] = None  # e.g. "A"

@@ -29,9 +29,6 @@ const Admin = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
   const [showContestForm, setShowContestForm] = useState(false);
-  const [problemSearch, setProblemSearch] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   
   // Contest form state
   const [contestForm, setContestForm] = useState({
@@ -42,8 +39,7 @@ const Admin = () => {
     difficulty: 'mixed',
     contest_type: 'rated',
     is_public: true,
-    max_participants: null,
-    problems: [] // Array of Codeforces problems
+    max_participants: null
   });
 
   // Fetch admin stats
@@ -92,76 +88,8 @@ const Admin = () => {
       difficulty: 'mixed',
       contest_type: 'rated',
       is_public: true,
-      max_participants: null,
-      problems: []
+      max_participants: null
     });
-    setProblemSearch('');
-    setSearchResults([]);
-  };
-
-  // Search Codeforces problems
-  const searchCodeforcesProblems = async (query) => {
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    
-    setIsSearching(true);
-    try {
-      const response = await api.get(`/codeforces/problems/search?query=${encodeURIComponent(query)}&limit=15`);
-      setSearchResults(response.data.problems || []);
-    } catch (error) {
-      console.error('Failed to search problems:', error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Debounced search
-  const handleProblemSearchChange = (value) => {
-    setProblemSearch(value);
-    clearTimeout(window.problemSearchTimeout);
-    window.problemSearchTimeout = setTimeout(() => {
-      searchCodeforcesProblems(value);
-    }, 300);
-  };
-
-  // Add problem to contest
-  const addProblemToContest = (problem) => {
-    if (contestForm.problems.some(p => p.contest_id === problem.contest_id && p.index === problem.index)) {
-      toast.error('Problem already added');
-      return;
-    }
-    setContestForm({
-      ...contestForm,
-      problems: [...contestForm.problems, problem]
-    });
-    setProblemSearch('');
-    setSearchResults([]);
-    toast.success(`Added: ${problem.name}`);
-  };
-
-  // Remove problem from contest
-  const removeProblemFromContest = (problem) => {
-    setContestForm({
-      ...contestForm,
-      problems: contestForm.problems.filter(p => 
-        !(p.contest_id === problem.contest_id && p.index === problem.index)
-      )
-    });
-  };
-
-  // Get difficulty color
-  const getDifficultyColor = (rating) => {
-    if (!rating) return 'bg-gray-500';
-    if (rating < 1200) return 'bg-green-500';
-    if (rating < 1400) return 'bg-cyan-500';
-    if (rating < 1600) return 'bg-blue-500';
-    if (rating < 1900) return 'bg-purple-500';
-    if (rating < 2100) return 'bg-yellow-500';
-    if (rating < 2400) return 'bg-orange-500';
-    return 'bg-red-500';
   };
 
   // Check if user is admin
@@ -182,15 +110,24 @@ const Admin = () => {
     console.log('=== Contest Submit Started ===');
     console.log('Contest Form:', contestForm);
     
-    // Validate that problems are added
-    if (contestForm.problems.length === 0) {
-      console.error('No problems added');
-      toast.error('Please add at least one problem to the contest');
+    // Validate form fields
+    if (!contestForm.title || contestForm.title.trim().length < 3) {
+      toast.error('Contest title must be at least 3 characters');
+      return;
+    }
+    
+    if (!contestForm.description || contestForm.description.trim().length < 10) {
+      toast.error('Contest description must be at least 10 characters');
+      return;
+    }
+    
+    if (!contestForm.start_time) {
+      toast.error('Please select a start time');
       return;
     }
     
     try {
-      // Format the contest data properly and ensure types are correct
+      // Format the contest data - problems will be auto-selected by backend
       const contestData = {
         title: contestForm.title,
         description: contestForm.description,
@@ -199,25 +136,17 @@ const Admin = () => {
         difficulty: contestForm.difficulty,
         contest_type: contestForm.contest_type,
         is_public: contestForm.is_public,
-        max_participants: contestForm.max_participants || null,
-        problems: contestForm.problems.map(p => ({
-          contest_id: parseInt(p.contest_id),
-          index: p.index,
-          name: p.name,
-          rating: p.rating ? parseInt(p.rating) : null,
-          tags: Array.isArray(p.tags) ? p.tags : []
-        }))
+        max_participants: contestForm.max_participants || null
       };
       
       console.log('=== Submitting Contest Data ===', contestData);
-      console.log('Problems array:', JSON.stringify(contestData.problems, null, 2));
       
       // Submit mutation
       const result = await createContestMutation.mutateAsync(contestData);
       
       // Success - only execute if mutation succeeds
       console.log('=== Contest Submit Completed ===', result);
-      toast.success('Contest created successfully! Notification sent to all users.');
+      toast.success('Contest created successfully with 5 random CP problems! Notification sent to all users.');
       
       // Invalidate queries to refresh data
       await queryClient.invalidateQueries({ queryKey: ['adminContests'] });
@@ -233,7 +162,20 @@ const Admin = () => {
       console.error('Error:', error);
       console.error('Error response:', error.response);
       console.error('Error message:', error.message);
-      toast.error(error.response?.data?.detail || error.message || 'Failed to create contest');
+      
+      // Extract and display error message
+      let errorMessage = 'Failed to create contest';
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        } else if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map(e => e.msg || e.message).join(', ');
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage, { duration: 5000 });
     }
   };
 
@@ -583,115 +525,15 @@ const Admin = () => {
               <div className="space-y-4 border-t border-gray-700 pt-6">
                 <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider flex items-center gap-2">
                   <Trophy size={16} />
-                  Contest Problems (from Codeforces)
+                  Contest Problems
                 </h3>
 
-                {/* Problem Search */}
-                <div className="relative">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      value={problemSearch}
-                      onChange={(e) => handleProblemSearchChange(e.target.value)}
-                      placeholder="Search Codeforces problems by name or ID..."
-                      className="w-full pl-10 pr-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                    />
-                    {isSearching && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 animate-spin" />
-                    )}
-                  </div>
-
-                  {/* Search Results Dropdown */}
-                  <AnimatePresence>
-                    {searchResults.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute z-10 w-full mt-2 bg-gray-900 border border-gray-700 rounded-lg shadow-xl max-h-60 overflow-y-auto"
-                      >
-                        {searchResults.map((problem) => (
-                          <button
-                            key={`${problem.contest_id}-${problem.index}`}
-                            type="button"
-                            onClick={() => addProblemToContest(problem)}
-                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-800 transition-colors text-left border-b border-gray-700/50 last:border-b-0"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-gray-500 font-mono text-sm">
-                                {problem.contest_id}{problem.index}
-                              </span>
-                              <span className="text-white truncate max-w-xs">{problem.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${getDifficultyColor(problem.rating)}`} />
-                              <span className="text-gray-400 text-sm">{problem.rating || 'N/A'}</span>
-                              <Plus size={16} className="text-green-400" />
-                            </div>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Selected Problems */}
-                {contestForm.problems.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-400">
-                      {contestForm.problems.length} problem{contestForm.problems.length > 1 ? 's' : ''} selected
-                    </p>
-                    <div className="space-y-2">
-                      {contestForm.problems.map((problem, index) => (
-                        <motion.div
-                          key={`${problem.contest_id}-${problem.index}`}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="flex items-center justify-between bg-gray-900/50 border border-gray-700 rounded-lg px-4 py-3"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="w-6 h-6 bg-blue-500/20 text-blue-400 rounded flex items-center justify-center text-sm font-medium">
-                              {index + 1}
-                            </span>
-                            <span className="text-gray-500 font-mono text-sm">
-                              {problem.contest_id}{problem.index}
-                            </span>
-                            <span className="text-white">{problem.name}</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2 h-2 rounded-full ${getDifficultyColor(problem.rating)}`} />
-                              <span className="text-gray-400 text-sm">{problem.rating || 'N/A'}</span>
-                            </div>
-                            <a
-                              href={`https://codeforces.com/problemset/problem/${problem.contest_id}/${problem.index}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-gray-400 hover:text-blue-400"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <ExternalLink size={16} />
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => removeProblemFromContest(problem)}
-                              className="text-red-400 hover:text-red-300"
-                            >
-                              <X size={18} />
-                            </button>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {contestForm.problems.length === 0 && (
-                  <p className="text-gray-500 text-sm text-center py-4 bg-gray-900/30 rounded-lg border border-dashed border-gray-700">
-                    No problems added yet. Search and add Codeforces problems above.
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg px-4 py-3">
+                  <p className="text-blue-300 text-sm flex items-center gap-2">
+                    <Check size={16} />
+                    5 random Competitive Programming problems will be automatically selected for this contest
                   </p>
-                )}
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">

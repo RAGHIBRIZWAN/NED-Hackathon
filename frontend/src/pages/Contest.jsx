@@ -30,6 +30,8 @@ const Contest = () => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissions, setSubmissions] = useState({});
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [examEnded, setExamEnded] = useState(false);
 
   // Fetch contest
   const { data: contestData, isLoading } = useQuery({
@@ -72,6 +74,83 @@ const Contest = () => {
     
     return () => clearInterval(timer);
   }, [contest]);
+
+  // Tab Switching Detection - Exam Proctoring
+  useEffect(() => {
+    if (!contest || examEnded) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // User switched tabs or minimized window
+        console.log('⚠️ TAB SWITCH DETECTED!');
+        setTabSwitchCount(prev => prev + 1);
+        
+        // Play beep sound using AudioContext for better browser support
+        try {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          oscillator.frequency.value = 800;
+          oscillator.type = 'sine';
+          gainNode.gain.value = 0.3;
+          
+          oscillator.start(audioContext.currentTime);
+          oscillator.stop(audioContext.currentTime + 0.2);
+          
+          setTimeout(() => {
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+          }, 300);
+        } catch (error) {
+          console.error('Audio error:', error);
+        }
+        
+        // End exam and give 0 marks
+        setExamEnded(true);
+        toast.error('⚠️ TAB SWITCHING DETECTED! Exam terminated. You will receive 0 marks.', {
+          duration: 5000,
+          style: {
+            background: '#DC2626',
+            color: '#fff',
+            fontSize: '16px',
+            fontWeight: 'bold'
+          }
+        });
+        
+        // Navigate away after showing message
+        setTimeout(() => {
+          navigate('/compete', { 
+            state: { 
+              disqualified: true,
+              reason: 'Tab switching detected during exam'
+            } 
+          });
+        }, 3000);
+      }
+    };
+
+    const handleBlur = () => {
+      if (document.hidden) {
+        console.log('Window blur + hidden - tab switch detected');
+      }
+    };
+
+    // Add event listeners
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+
+    // Log that proctoring is active
+    console.log('🔒 Exam proctoring active - do NOT switch tabs!');
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [contest, examEnded, navigate]);
 
   useEffect(() => {
     if (problems[selectedProblem]?.starter_code) {
@@ -134,8 +213,17 @@ const Contest = () => {
   const currentProblem = problems[selectedProblem];
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
+    <div className="h-screen flex flex-col">      {/* Proctoring Warning */}
+      {!examEnded && (
+        <div className="bg-red-600 text-white px-6 py-2 flex items-center justify-center gap-2">
+          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          <span className="font-semibold">EXAM MODE ACTIVE</span>
+          <span className="text-sm">- DO NOT switch tabs or minimize window. Violation will result in IMMEDIATE DISQUALIFICATION with 0 marks!</span>
+        </div>
+      )}
+            {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-6 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
