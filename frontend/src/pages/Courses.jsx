@@ -189,6 +189,9 @@ const Courses = () => {
     setSelectedMode(mode);
     if (mode.id === 'contest') {
       navigate('/compete');
+    } else if (mode.id === 'practice' && ['programming-fundamentals', 'oop', 'data-structures'].includes(selectedModule?.id)) {
+      // Redirect to Practice page with module ID
+      navigate(`/practice?module=${selectedModule.id}`);
     } else if (mode.id === 'exam' && ['programming-fundamentals', 'oop', 'data-structures'].includes(selectedModule?.id)) {
       // Redirect to exam page with module ID
       navigate(`/exam?module=${selectedModule.id}`);

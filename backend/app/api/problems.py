@@ -703,6 +703,196 @@ async def submit_solution(
     )
 
 
+# ============ OOP Validation Helper ============
+
+async def validate_oop_code(code: str, problem_description: str, language: str) -> dict:
+    """Use Groq LLM to validate if code follows OOP principles for OOP problems."""
+    
+    prompt = f"""You are a code reviewer for an Object-Oriented Programming course.
+
+Problem Description:
+{problem_description}
+
+Student's Code ({language}):
+```{language}
+{code}
+```
+
+Analyze this code and determine if it properly follows OOP principles as required by the problem.
+
+Requirements to check:
+1. Does the code define appropriate classes as described in the problem?
+2. Are methods properly encapsulated within classes?
+3. Does it use inheritance/polymorphism if the problem requires it?
+4. Are attributes properly defined (private/public as appropriate)?
+5. Does the solution use OOP concepts instead of purely procedural code?
+
+Respond in JSON format:
+{{
+  "valid": true/false,
+  "feedback": "Brief explanation of what's wrong or right with the OOP implementation",
+  "missing_concepts": ["list", "of", "missing", "oop", "concepts"]
+}}
+
+Important: If the output is correct but the code doesn't use proper OOP (e.g., no classes, procedural approach), mark it as INVALID.
+Be strict - the solution must demonstrate understanding of OOP concepts."""
+
+    try:
+        response = await call_groq_api(prompt, temperature=0.3)
+        
+        # Parse JSON from response
+        import re
+        json_match = re.search(r'\{[^{}]*\}', response, re.DOTALL)
+        if json_match:
+            result = json.loads(json_match.group())
+            return {
+                "valid": result.get("valid", False),
+                "feedback": result.get("feedback", ""),
+                "missing_concepts": result.get("missing_concepts", [])
+            }
+        
+        # If can't parse, assume invalid
+        return {
+            "valid": False,
+            "feedback": "Could not validate OOP compliance. Please ensure you use proper OOP concepts.",
+            "missing_concepts": []
+        }
+    except Exception as e:
+        print(f"OOP validation error: {e}")
+        # On error, don't block - just skip validation
+        return {
+            "valid": True,
+            "feedback": "OOP validation skipped due to service unavailability.",
+            "missing_concepts": []
+        }
+
+
+@router.post("/modules/submit/{problem_id}")
+async def submit_module_solution(
+    problem_id: str,
+    request: SubmitSolutionRequest
+):
+    """Submit solution for a module coding problem with OOP validation for OOP module."""
+    
+    # Find problem
+    problem = get_coding_problem_by_id(problem_id)
+    
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    
+    # Check if this is an OOP problem (id starts with 'oop-')
+    is_oop_problem = problem_id.startswith('oop-')
+    oop_validation = None
+    
+    # Validate OOP compliance for OOP problems BEFORE running tests
+    if is_oop_problem:
+        oop_validation = await validate_oop_code(
+            request.code, 
+            problem["description"],
+            request.language
+        )
+        
+        # If OOP validation fails, return failure immediately
+        if not oop_validation["valid"]:
+            return {
+                "verdict": "WA",
+                "verdict_message": "Code does not follow OOP requirements",
+                "passed_tests": 0,
+                "total_tests": len(problem["test_cases"]),
+                "execution_time_ms": 0,
+                "test_results": [],
+                "oop_validation": {
+                    "valid": False,
+                    "feedback": oop_validation["feedback"],
+                    "missing_concepts": oop_validation.get("missing_concepts", [])
+                }
+            }
+    
+    # Run test cases
+    test_cases = problem["test_cases"]
+    test_results = []
+    total_time = 0
+    all_passed = True
+    
+    for i, tc in enumerate(test_cases):
+        result = await MultiLangExecutor.execute(
+            request.code,
+            request.language,
+            tc["input"]
+        )
+        
+        expected = tc["output"].strip()
+        actual = result["output"].strip()
+        passed = result["status"] == "success" and actual == expected
+        
+        if not passed:
+            all_passed = False
+        
+        test_results.append({
+            "test_number": i + 1,
+            "passed": passed,
+            "input_data": tc["input"],
+            "expected_output": expected,
+            "actual_output": actual if result["status"] == "success" else None,
+            "execution_time_ms": result["execution_time_ms"],
+            "error": result["error"]
+        })
+        
+        total_time += result["execution_time_ms"]
+        
+        # Stop on first failure for efficiency
+        if not passed and i >= 2:
+            for j in range(i + 1, len(test_cases)):
+                test_results.append({
+                    "test_number": j + 1,
+                    "passed": False,
+                    "input_data": test_cases[j]["input"],
+                    "expected_output": test_cases[j]["output"],
+                    "actual_output": None,
+                    "execution_time_ms": 0,
+                    "error": "Skipped due to previous failure"
+                })
+            break
+    
+    passed_count = sum(1 for tr in test_results if tr["passed"])
+    total_count = len(test_cases)
+    
+    if all_passed:
+        verdict = "AC"
+        verdict_message = f"Accepted! All {total_count} test cases passed."
+    elif any(tr.get("error") and "Time Limit" in tr["error"] for tr in test_results):
+        verdict = "TLE"
+        verdict_message = "Time Limit Exceeded"
+    elif any(tr.get("error") and "Compilation" in (tr.get("error") or "") for tr in test_results):
+        verdict = "CE"
+        verdict_message = "Compilation Error"
+    elif any(tr.get("error") and "Runtime" in (tr.get("error") or "") for tr in test_results):
+        verdict = "RE"
+        verdict_message = "Runtime Error"
+    else:
+        first_failed = next((tr for tr in test_results if not tr["passed"]), None)
+        verdict = "WA"
+        verdict_message = f"Wrong Answer on test {first_failed['test_number'] if first_failed else '?'}"
+    
+    response = {
+        "verdict": verdict,
+        "verdict_message": verdict_message,
+        "passed_tests": passed_count,
+        "total_tests": total_count,
+        "execution_time_ms": total_time,
+        "test_results": test_results[:5]
+    }
+    
+    # Add OOP validation info if applicable
+    if is_oop_problem and oop_validation:
+        response["oop_validation"] = {
+            "valid": oop_validation["valid"],
+            "feedback": oop_validation["feedback"]
+        }
+    
+    return response
+
+
 # ============ Module Exam Routes ============
 
 @router.get("/modules/{module_id}/exam")

@@ -18,7 +18,11 @@ import {
   Terminal,
   ArrowLeft,
   Maximize2,
-  Minimize2
+  Minimize2,
+  BookOpen,
+  Cpu,
+  Layers,
+  Trophy
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import api from '../services/api';
@@ -90,17 +94,35 @@ console.log(result);
   },
 };
 
-const MODULE_NAMES = {
-  'programming-fundamentals': 'Programming Fundamentals',
-  'oop': 'Object-Oriented Programming',
-  'data-structures': 'Data Structures'
+const MODULE_INFO = {
+  'programming-fundamentals': { 
+    name: 'Programming Fundamentals', 
+    icon: BookOpen,
+    color: 'from-blue-500 to-cyan-500',
+    description: 'Variables, loops, functions, arrays, and basic concepts'
+  },
+  'oop': { 
+    name: 'Object-Oriented Programming', 
+    icon: Cpu,
+    color: 'from-purple-500 to-pink-500',
+    description: 'Classes, inheritance, polymorphism, encapsulation'
+  },
+  'data-structures': { 
+    name: 'Data Structures', 
+    icon: Layers,
+    color: 'from-orange-500 to-red-500',
+    description: 'Stacks, queues, linked lists, trees, graphs'
+  }
 };
 
 export default function Practice() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const moduleId = searchParams.get('module');
   const problemIdFromUrl = searchParams.get('problem');
+  
+  // Active category tab: 'cp' for competitive programming or module id
+  const [activeCategory, setActiveCategory] = useState(moduleId || 'cp');
   
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -118,18 +140,37 @@ export default function Practice() {
   const [activeTab, setActiveTab] = useState('output');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Update category when URL params change
+  useEffect(() => {
+    if (moduleId) {
+      setActiveCategory(moduleId);
+    }
+  }, [moduleId]);
+
+  // Handle category change
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+    setSelectedProblem(null);
+    setPage(1);
+    if (category === 'cp') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ module: category });
+    }
+  };
   
-  // Fetch module-based coding problems if moduleId is present
+  // Fetch module-based coding problems if a module is active
   const { data: moduleProblems, isLoading: moduleLoading } = useQuery({
-    queryKey: ['module-problems', moduleId],
+    queryKey: ['module-problems', activeCategory],
     queryFn: async () => {
-      const response = await api.get(`/problems/modules/${moduleId}/coding`);
+      const response = await api.get(`/problems/modules/${activeCategory}/coding`);
       return response.data;
     },
-    enabled: !!moduleId
+    enabled: activeCategory !== 'cp'
   });
   
-  // Fetch CP problems if no moduleId
+  // Fetch CP problems if CP category is active
   const { data, isLoading, error } = useQuery({
     queryKey: ['cp-problems', page, ratingMin, ratingMax, selectedDifficulty],
     queryFn: async () => {
@@ -144,7 +185,7 @@ export default function Practice() {
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
-    enabled: !moduleId
+    enabled: activeCategory === 'cp'
   });
   
   // Auto-select problem from URL
@@ -157,13 +198,19 @@ export default function Practice() {
     }
   }, [problemIdFromUrl, moduleProblems]);
   
-  // Fetch problem details (works for both CP and module problems)
+  // Fetch problem details
   const { data: problemData, isLoading: problemLoading } = useQuery({
-    queryKey: ['problem-detail', selectedProblem?.id],
+    queryKey: ['problem-detail', selectedProblem?.id, activeCategory],
     queryFn: async () => {
-      // Use module coding endpoint for module problems
-      const response = await api.get(`/problems/modules/coding/${selectedProblem.id}`);
-      return response.data;
+      if (activeCategory === 'cp') {
+        // CP problems use different endpoint
+        const response = await api.get(`/problems/cp/problems/${selectedProblem.id}`);
+        return response.data;
+      } else {
+        // Module coding endpoint
+        const response = await api.get(`/problems/modules/coding/${selectedProblem.id}`);
+        return response.data;
+      }
     },
     enabled: !!selectedProblem
   });
@@ -195,7 +242,12 @@ export default function Practice() {
   // Submit solution mutation
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const response = await api.post(`/problems/submit/${selectedProblem.id}`, {
+      // Use different endpoint based on problem type
+      const endpoint = activeCategory === 'cp' 
+        ? `/problems/submit/${selectedProblem.id}`
+        : `/problems/modules/submit/${selectedProblem.id}`;
+      
+      const response = await api.post(endpoint, {
         problem_id: selectedProblem.id,
         code,
         language
@@ -214,6 +266,16 @@ export default function Practice() {
       resultOutput += `${data.verdict_message}\n`;
       resultOutput += `Passed: ${data.passed_tests}/${data.total_tests} tests\n`;
       resultOutput += `Time: ${data.execution_time_ms}ms\n\n`;
+      
+      // Show OOP validation feedback if present
+      if (data.oop_validation) {
+        resultOutput += '--- OOP Validation ---\n';
+        resultOutput += `Status: ${data.oop_validation.valid ? '✓ Valid OOP' : '✗ Invalid OOP'}\n`;
+        if (data.oop_validation.feedback) {
+          resultOutput += `Feedback: ${data.oop_validation.feedback}\n`;
+        }
+        resultOutput += '\n';
+      }
       
       if (data.test_results) {
         resultOutput += '--- Test Results ---\n';
@@ -302,6 +364,11 @@ export default function Practice() {
                       {problemData.rating && (
                         <span className="text-gray-400 text-sm">Rating: {problemData.rating}</span>
                       )}
+                      {activeCategory === 'oop' && (
+                        <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">
+                          OOP Required
+                        </span>
+                      )}
                     </div>
                     <h1 className="text-2xl font-bold text-white mb-2">
                       {problemData.name}
@@ -314,6 +381,21 @@ export default function Practice() {
                       ))}
                     </div>
                   </div>
+
+                  {/* OOP Notice */}
+                  {activeCategory === 'oop' && (
+                    <div className="mb-6 p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                      <h4 className="text-purple-400 font-medium mb-2 flex items-center gap-2">
+                        <Cpu size={18} />
+                        OOP Requirements
+                      </h4>
+                      <p className="text-gray-300 text-sm">
+                        Your solution must use proper Object-Oriented Programming concepts as described in the problem.
+                        The code will be validated by AI to ensure it follows OOP principles (classes, methods, inheritance, etc.).
+                        Even if the output is correct, solutions not following OOP requirements will fail.
+                      </p>
+                    </div>
+                  )}
 
                   {/* Problem Description */}
                   <div className="prose prose-invert max-w-none">
@@ -509,6 +591,10 @@ export default function Practice() {
     );
   }
 
+  // Determine current problems and loading state
+  const currentProblems = activeCategory === 'cp' ? data?.problems : moduleProblems?.problems;
+  const currentLoading = activeCategory === 'cp' ? isLoading : moduleLoading;
+
   // Problem list view
   return (
     <div className="min-h-screen bg-gray-900 p-6">
@@ -519,166 +605,232 @@ export default function Practice() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+            <Code className="text-blue-400" />
             Practice Problems
           </h1>
           <p className="text-gray-400">
-            Solve competitive programming problems to sharpen your skills
+            Master programming through hands-on coding challenges
           </p>
         </motion.div>
 
-        {/* Search and Filter Bar */}
+        {/* Category Tabs */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 mb-6 border border-gray-700/50"
+          className="mb-6"
         >
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Search */}
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search problems by name..."
-                  className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* Filter Toggle */}
+          <div className="flex flex-wrap gap-3">
+            {/* CP Tab */}
             <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
-                showFilters || selectedDifficulty || ratingMin || ratingMax
-                  ? 'bg-primary/20 border-primary text-primary'
-                  : 'bg-gray-900/50 border-gray-700 text-gray-400 hover:text-white'
+              onClick={() => handleCategoryChange('cp')}
+              className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all ${
+                activeCategory === 'cp'
+                  ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg shadow-yellow-500/20'
+                  : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-700'
               }`}
             >
-              <SlidersHorizontal className="w-5 h-5" />
-              <span>Filters</span>
+              <Trophy size={20} />
+              <div className="text-left">
+                <div className="font-medium">Competitive Programming</div>
+                <div className="text-xs opacity-80">Codeforces-style problems</div>
+              </div>
             </button>
 
-            {/* Clear Filters */}
-            {(selectedDifficulty || ratingMin || ratingMax || search) && (
-              <button
-                onClick={clearFilters}
-                className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 hover:text-red-300 transition-colors"
-              >
-                <X className="w-5 h-5" />
-                <span>Clear</span>
-              </button>
-            )}
+            {/* Module Tabs */}
+            {Object.entries(MODULE_INFO).map(([key, info]) => {
+              const Icon = info.icon;
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleCategoryChange(key)}
+                  className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all ${
+                    activeCategory === key
+                      ? `bg-gradient-to-r ${info.color} text-white shadow-lg`
+                      : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-700'
+                  }`}
+                >
+                  <Icon size={20} />
+                  <div className="text-left">
+                    <div className="font-medium">{info.name}</div>
+                    <div className="text-xs opacity-80">{info.description.substring(0, 30)}...</div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-
-          {/* Expanded Filters */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="pt-4 mt-4 border-t border-gray-700">
-                  {/* Rating Range */}
-                  <div className="mb-4">
-                    <label className="text-sm text-gray-400 mb-2 block">Rating Range</label>
-                    <div className="flex gap-4 items-center">
-                      <input
-                        type="number"
-                        value={ratingMin}
-                        onChange={(e) => { setRatingMin(e.target.value); setPage(1); }}
-                        placeholder="Min (800)"
-                        min="800"
-                        max="3500"
-                        step="100"
-                        className="w-32 px-3 py-2 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500"
-                      />
-                      <span className="text-gray-500">to</span>
-                      <input
-                        type="number"
-                        value={ratingMax}
-                        onChange={(e) => { setRatingMax(e.target.value); setPage(1); }}
-                        placeholder="Max (3500)"
-                        min="800"
-                        max="3500"
-                        step="100"
-                        className="w-32 px-3 py-2 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Difficulty */}
-                  <div>
-                    <label className="text-sm text-gray-400 mb-2 block">Difficulty</label>
-                    <div className="flex flex-wrap gap-2">
-                      {['easy', 'medium', 'hard', 'expert'].map(diff => (
-                        <button
-                          key={diff}
-                          onClick={() => {
-                            setSelectedDifficulty(selectedDifficulty === diff ? '' : diff);
-                            setPage(1);
-                          }}
-                          className={`px-4 py-2 rounded-lg text-sm transition-colors capitalize ${
-                            selectedDifficulty === diff
-                              ? getDifficultyLabel(diff).color
-                              : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
-                          }`}
-                        >
-                          {diff}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
 
-        {/* Module Header (if viewing module problems) */}
-        {moduleId && (
-          <div className="mb-6">
-            <button
-              onClick={() => navigate('/courses')}
-              className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Back to Courses
-            </button>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              {MODULE_NAMES[moduleId] || moduleId} - Coding Problems
-            </h2>
-            <p className="text-gray-400">
-              {moduleProblems?.total || 0} problems available
-            </p>
-          </div>
+        {/* Search and Filter Bar (only for CP) */}
+        {activeCategory === 'cp' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 mb-6 border border-gray-700/50"
+          >
+            <div className="flex flex-wrap gap-4 items-center">
+              {/* Search */}
+              <div className="flex-1 min-w-[200px]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search problems by name..."
+                    className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Filter Toggle */}
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg border transition-colors ${
+                  showFilters || selectedDifficulty || ratingMin || ratingMax
+                    ? 'bg-primary/20 border-primary text-primary'
+                    : 'bg-gray-900/50 border-gray-700 text-gray-400 hover:text-white'
+                }`}
+              >
+                <SlidersHorizontal className="w-5 h-5" />
+                <span>Filters</span>
+              </button>
+
+              {/* Clear Filters */}
+              {(selectedDifficulty || ratingMin || ratingMax || search) && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 hover:text-red-300 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                  <span>Clear</span>
+                </button>
+              )}
+            </div>
+
+            {/* Expanded Filters */}
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-4 mt-4 border-t border-gray-700">
+                    {/* Rating Range */}
+                    <div className="mb-4">
+                      <label className="text-sm text-gray-400 mb-2 block">Rating Range</label>
+                      <div className="flex gap-4 items-center">
+                        <input
+                          type="number"
+                          value={ratingMin}
+                          onChange={(e) => { setRatingMin(e.target.value); setPage(1); }}
+                          placeholder="Min (800)"
+                          min="800"
+                          max="3500"
+                          step="100"
+                          className="w-32 px-3 py-2 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500"
+                        />
+                        <span className="text-gray-500">to</span>
+                        <input
+                          type="number"
+                          value={ratingMax}
+                          onChange={(e) => { setRatingMax(e.target.value); setPage(1); }}
+                          placeholder="Max (3500)"
+                          min="800"
+                          max="3500"
+                          step="100"
+                          className="w-32 px-3 py-2 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Difficulty */}
+                    <div>
+                      <label className="text-sm text-gray-400 mb-2 block">Difficulty</label>
+                      <div className="flex flex-wrap gap-2">
+                        {['easy', 'medium', 'hard', 'expert'].map(diff => (
+                          <button
+                            key={diff}
+                            onClick={() => {
+                              setSelectedDifficulty(selectedDifficulty === diff ? '' : diff);
+                              setPage(1);
+                            }}
+                            className={`px-4 py-2 rounded-lg text-sm transition-colors capitalize ${
+                              selectedDifficulty === diff
+                                ? getDifficultyLabel(diff).color
+                                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-700'
+                            }`}
+                          >
+                            {diff}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+        {/* Module Info Banner (for module categories) */}
+        {activeCategory !== 'cp' && MODULE_INFO[activeCategory] && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`mb-6 bg-gradient-to-r ${MODULE_INFO[activeCategory].color} rounded-xl p-6`}
+          >
+            <div className="flex items-start gap-4">
+              {(() => {
+                const Icon = MODULE_INFO[activeCategory].icon;
+                return <Icon size={32} className="text-white/80" />;
+              })()}
+              <div>
+                <h2 className="text-xl font-bold text-white mb-1">
+                  {MODULE_INFO[activeCategory].name}
+                </h2>
+                <p className="text-white/80">
+                  {MODULE_INFO[activeCategory].description}
+                </p>
+                {activeCategory === 'oop' && (
+                  <p className="text-white/90 text-sm mt-2 bg-white/10 px-3 py-1 rounded inline-block">
+                    ⚠️ Solutions must follow proper OOP principles
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
         )}
 
         {/* Results Info */}
-        {!moduleId && data && (
+        {activeCategory === 'cp' && data && (
           <div className="text-gray-400 text-sm mb-4">
             Showing {((page - 1) * 20) + 1}-{Math.min(page * 20, data.total)} of {data.total} problems
           </div>
         )}
 
+        {activeCategory !== 'cp' && moduleProblems && (
+          <div className="text-gray-400 text-sm mb-4">
+            {moduleProblems.total || moduleProblems.problems?.length || 0} problems available
+          </div>
+        )}
+
         {/* Problems List */}
-        {(moduleId ? moduleLoading : isLoading) ? (
+        {currentLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
-        ) : (moduleId ? false : error) ? (
+        ) : (activeCategory === 'cp' && error) ? (
           <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
             <p className="text-red-400">Failed to load problems. Please try again later.</p>
           </div>
-        ) : (moduleId ? moduleProblems?.problems?.length === 0 : data?.problems?.length === 0) ? (
+        ) : !currentProblems?.length ? (
           <div className="bg-gray-800/50 rounded-xl p-10 text-center">
             <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">No problems found matching your criteria.</p>
-            {!moduleId && (
+            {activeCategory === 'cp' && (
               <button onClick={clearFilters} className="mt-4 text-primary hover:underline">
                 Clear all filters
               </button>
@@ -690,7 +842,7 @@ export default function Practice() {
             animate={{ opacity: 1 }}
             className="space-y-3"
           >
-            {(moduleId ? moduleProblems?.problems : data?.problems)?.map((problem, index) => (
+            {currentProblems.map((problem, index) => (
               <motion.div
                 key={problem.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -706,6 +858,11 @@ export default function Practice() {
                       <h3 className="text-white font-medium truncate group-hover:text-primary transition-colors">
                         {problem.name}
                       </h3>
+                      {problem.topic && (
+                        <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">
+                          {problem.topic}
+                        </span>
+                      )}
                     </div>
                     
                     {/* Tags */}
@@ -728,13 +885,15 @@ export default function Practice() {
                       {getDifficultyLabel(problem.difficulty).text}
                     </span>
                     
-                    {/* Rating */}
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${getDifficultyColor(problem.rating)}`} />
-                      <span className="text-white text-sm font-medium">
-                        {problem.rating}
-                      </span>
-                    </div>
+                    {/* Rating (only for CP) */}
+                    {problem.rating && (
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${getDifficultyColor(problem.rating)}`} />
+                        <span className="text-white text-sm font-medium">
+                          {problem.rating}
+                        </span>
+                      </div>
+                    )}
 
                     <Code className="w-5 h-5 text-gray-500 group-hover:text-primary transition-colors" />
                   </div>
@@ -744,8 +903,8 @@ export default function Practice() {
           </motion.div>
         )}
 
-        {/* Pagination */}
-        {data && data.total_pages > 1 && (
+        {/* Pagination (only for CP) */}
+        {activeCategory === 'cp' && data && data.total_pages > 1 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -775,30 +934,32 @@ export default function Practice() {
           </motion.div>
         )}
 
-        {/* Difficulty Legend */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mt-8 bg-gray-800/30 rounded-xl p-4 border border-gray-700/50"
-        >
-          <h3 className="text-gray-400 text-sm mb-3">Difficulty Legend</h3>
-          <div className="flex flex-wrap gap-4">
-            {[
-              { rating: 800, label: 'Newbie (800-1199)' },
-              { rating: 1200, label: 'Pupil (1200-1399)' },
-              { rating: 1400, label: 'Specialist (1400-1599)' },
-              { rating: 1600, label: 'Expert (1600-1899)' },
-              { rating: 1900, label: 'Candidate Master (1900-2099)' },
-              { rating: 2100, label: 'Master (2100-2399)' },
-              { rating: 2400, label: 'Grandmaster (2400+)' },
-            ].map(level => (
-              <div key={level.label} className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${getDifficultyColor(level.rating)}`} />
-                <span className="text-gray-400 text-sm">{level.label}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+        {/* Difficulty Legend (only for CP) */}
+        {activeCategory === 'cp' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-8 bg-gray-800/30 rounded-xl p-4 border border-gray-700/50"
+          >
+            <h3 className="text-gray-400 text-sm mb-3">Difficulty Legend</h3>
+            <div className="flex flex-wrap gap-4">
+              {[
+                { rating: 800, label: 'Newbie (800-1199)' },
+                { rating: 1200, label: 'Pupil (1200-1399)' },
+                { rating: 1400, label: 'Specialist (1400-1599)' },
+                { rating: 1600, label: 'Expert (1600-1899)' },
+                { rating: 1900, label: 'Candidate Master (1900-2099)' },
+                { rating: 2100, label: 'Master (2100-2399)' },
+                { rating: 2400, label: 'Grandmaster (2400+)' },
+              ].map(level => (
+                <div key={level.label} className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${getDifficultyColor(level.rating)}`} />
+                  <span className="text-gray-400 text-sm">{level.label}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );

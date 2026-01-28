@@ -13,8 +13,7 @@ import {
   Flame,
   ShoppingBag,
   Shield,
-  Bell,
-  Code
+  Bell
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useGamificationStore } from '../stores/gamificationStore';
@@ -28,11 +27,10 @@ const Layout = () => {
   // Check if user is admin
   const isAdmin = user?.role === 'admin';
 
-  // Base navigation items
+  // Base navigation items (Practice removed - now integrated into CP Practice)
   const baseNavItems = [
     { path: '/dashboard', icon: Home, label: t('nav.home') },
     { path: '/courses', icon: BookOpen, label: t('nav.learn') },
-    { path: '/practice', icon: Code, label: t('nav.practice') },
     { path: '/compete', icon: Trophy, label: t('nav.compete') },
     { path: '/leaderboard', icon: Star, label: t('compete.leaderboard') },
     { path: '/shop', icon: ShoppingBag, label: t('nav.shop') },
