@@ -33,12 +33,17 @@ async def connect_db():
     global _client, _database
     
     try:
-        # Create MongoDB client
+        # Create MongoDB client with optimized connection pool for concurrency
         _client = AsyncIOMotorClient(
             settings.MONGODB_URL,
-            maxPoolSize=50,
-            minPoolSize=10,
-            serverSelectionTimeoutMS=5000
+            maxPoolSize=100,  # Increased for better concurrency
+            minPoolSize=20,
+            maxIdleTimeMS=45000,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=10000,
+            socketTimeoutMS=45000,
+            retryWrites=True,
+            w='majority'
         )
         
         # Get database

@@ -5,6 +5,7 @@ User registration, login, and profile management.
 """
 
 import base64
+import asyncio
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File
@@ -74,6 +75,9 @@ class UpdatePreferencesRequest(BaseModel):
 
 
 # ============ Routes ============
+
+# Semaphore to limit concurrent login requests to prevent database overload
+_login_semaphore = asyncio.Semaphore(20)
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(request: RegisterRequest):
@@ -153,61 +157,63 @@ async def register(request: RegisterRequest):
 async def login(request: LoginRequest):
     """
     Authenticate user and return tokens.
+    Supports concurrent logins from multiple tabs/sessions.
     """
-    # Find user
-    user = await User.find_one(User.email == request.email)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
-    
-    # Verify password
-    if not verify_password(request.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
-        )
-    
-    # Check if active
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Account is deactivated"
-        )
-    
-    # Update last login
-    user.last_login = datetime.utcnow()
-    await user.save()
-    
-    # Create tokens
-    token_data = {
-        "sub": str(user.id),
-        "email": user.email,
-        "role": user.role
-    }
-    access_token = create_access_token(token_data)
-    refresh_token = create_refresh_token(token_data)
-    
-    return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        user={
-            "id": str(user.id),
+    async with _login_semaphore:
+        # Find user
+        user = await User.find_one(User.email == request.email)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
+        # Verify password
+        if not verify_password(request.password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
+        # Check if active
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is deactivated"
+            )
+        
+        # Update last login (use atomic update for better concurrency)
+        user.last_login = datetime.utcnow()
+        await User.find_one(User.id == user.id).update({"$set": {"last_login": user.last_login}})
+        
+        # Create tokens
+        token_data = {
+            "sub": str(user.id),
             "email": user.email,
-            "username": user.username,
-            "full_name": user.full_name,
-            "role": user.role,
-            "level": user.level,
-            "xp": user.xp,
-            "coins": user.coins,
-            "rating": user.rating,
-            "avatar_url": user.avatar_url,
-            "profile_picture": user.profile_picture,
-            "preferences": user.preferences.dict(),
-            "stats": user.stats.dict()
+            "role": user.role
         }
-    )
+        access_token = create_access_token(token_data)
+        refresh_token = create_refresh_token(token_data)
+        
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user={
+                "id": str(user.id),
+                "email": user.email,
+                "username": user.username,
+                "full_name": user.full_name,
+                "role": user.role,
+                "level": user.level,
+                "xp": user.xp,
+                "coins": user.coins,
+                "rating": user.rating,
+                "avatar_url": user.avatar_url,
+                "profile_picture": user.profile_picture,
+                "preferences": user.preferences.dict(),
+                "stats": user.stats.dict()
+            }
+        )
 
 
 @router.post("/refresh", response_model=TokenResponse)

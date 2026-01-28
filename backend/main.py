@@ -126,5 +126,9 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=int(os.getenv("PORT", 8000)),
         reload=True,
-        log_level="info"
+        log_level="info",
+        workers=1,  # Single worker for development (reload mode requires this)
+        limit_concurrency=1000,  # Allow up to 1000 concurrent connections
+        limit_max_requests=10000,  # Restart worker after 10k requests (memory management)
+        timeout_keep_alive=30,  # Keep-alive timeout
     )
