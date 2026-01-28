@@ -65,6 +65,8 @@ const Exam = () => {
   const [language, setLanguage] = useState('python');
   const [runOutput, setRunOutput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [examTerminated, setExamTerminated] = useState(false);
 
   // Fetch exam questions
   const { data: examData, isLoading } = useQuery({
@@ -104,6 +106,80 @@ const Exam = () => {
       return () => clearInterval(timer);
     }
   }, [examResults, questions.length]);
+
+  // Tab switching detection with warning system
+  useEffect(() => {
+    if (!examResults && !examTerminated && questions.length > 0) {
+      console.log('🔒 Module exam proctoring active');
+
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          const newCount = tabSwitchCount + 1;
+          setTabSwitchCount(newCount);
+          console.log(`⚠️ TAB SWITCH DETECTED! Count: ${newCount}`);
+
+          // Create beep sound
+          try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create two beeps
+            const playBeep = (delay) => {
+              setTimeout(() => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+              }, delay);
+            };
+            
+            playBeep(0);
+            playBeep(300);
+          } catch (error) {
+            console.error('Audio error:', error);
+          }
+
+          if (newCount === 1) {
+            // First warning
+            toast.error('⚠️ WARNING: Tab switching detected! You have ONE more chance. Next switch will close the exam.', {
+              duration: 5000,
+              icon: '⚠️'
+            });
+          } else if (newCount >= 2) {
+            // Second violation - terminate exam
+            setExamTerminated(true);
+            toast.error('❌ EXAM TERMINATED: You switched tabs twice. Exam has been closed due to violation.', {
+              duration: 6000,
+              icon: '❌'
+            });
+            
+            // Auto-submit and redirect
+            setTimeout(() => {
+              handleSubmit();
+              setTimeout(() => {
+                navigate('/courses');
+              }, 2000);
+            }, 3000);
+          }
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+  }, [examResults, examTerminated, questions.length, tabSwitchCount, navigate]);
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -406,6 +482,59 @@ const Exam = () => {
             </div>
           </div>
         </div>
+
+        {/* Tab Switch Warning Banner */}
+        {tabSwitchCount > 0 && !examTerminated && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 bg-red-600/20 border-2 border-red-500 rounded-2xl p-6"
+          >
+            <div className="flex items-start gap-4">
+              <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-red-400 mb-2">
+                  {tabSwitchCount === 1 ? '⚠️ FIRST WARNING' : '❌ FINAL WARNING'}
+                </h3>
+                {tabSwitchCount === 1 ? (
+                  <div className="text-gray-200">
+                    <p className="font-semibold mb-1">
+                      Tab switching has been detected during your exam!
+                    </p>
+                    <p className="text-sm">
+                      You have <span className="font-bold text-yellow-400">ONE MORE CHANCE</span>. 
+                      If you switch tabs again, your exam will be automatically closed and submitted.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-200">
+                    You have already received one warning. Do NOT switch tabs again or your exam will be terminated immediately.
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Exam Terminated Banner */}
+        {examTerminated && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-6 bg-red-600 rounded-2xl p-8 text-center"
+          >
+            <XCircle className="w-16 h-16 text-white mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">
+              EXAM TERMINATED
+            </h2>
+            <p className="text-red-100 mb-4">
+              Your exam has been closed due to multiple tab switching violations.
+            </p>
+            <p className="text-red-200 text-sm">
+              Submitting your answers and redirecting...
+            </p>
+          </motion.div>
+        )}
 
         {/* Question */}
         <AnimatePresence mode="wait">
