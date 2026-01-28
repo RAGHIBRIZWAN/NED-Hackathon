@@ -341,7 +341,15 @@ const Courses = () => {
 
             {/* Mode Cards */}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {MODES.map((mode, index) => {
+              {MODES
+                // Filter out 'contest' mode for non-CP modules
+                .filter(mode => {
+                  if (mode.id === 'contest' && selectedModule?.id !== 'competitive-programming') {
+                    return false;
+                  }
+                  return true;
+                })
+                .map((mode, index) => {
                 const IconComponent = mode.icon;
                 return (
                   <motion.div

@@ -9,7 +9,7 @@ from typing import Optional, List
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from pydantic import BaseModel
 
-from app.core.security import get_current_user
+from app.core.security import get_current_user, get_current_admin
 from app.models.contest import Contest, ContestParticipation, ContestProblem
 from app.models.challenge import Submission
 from app.models.user import User
@@ -392,18 +392,11 @@ async def get_user_contest_history(
 @router.post("/contests")
 async def create_contest(
     request: CreateContestRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_admin)
 ):
     """
     Create a new contest (Admin only).
     """
-    user = await User.get(current_user["user_id"])
-    if user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
-        )
-    
     # Create problems list
     problems = [
         ContestProblem(
@@ -443,18 +436,11 @@ async def create_contest(
 @router.post("/contests/{contest_id}/finalize")
 async def finalize_contest(
     contest_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_admin)
 ):
     """
     Finalize contest and calculate ratings (Admin only).
     """
-    user = await User.get(current_user["user_id"])
-    if user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
-        )
-    
     contest = await Contest.get(contest_id)
     if not contest:
         raise HTTPException(
@@ -518,3 +504,27 @@ async def finalize_contest(
     await contest.save()
     
     return {"message": "Contest finalized", "participants": len(participations)}
+
+
+@router.delete("/contests/{contest_id}")
+async def delete_contest(
+    contest_id: str,
+    current_user: dict = Depends(get_current_admin)
+):
+    """
+    Delete a contest (Admin only).
+    """
+    contest = await Contest.get(contest_id)
+    if not contest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contest not found"
+        )
+    
+    # Delete all participations for this contest
+    await ContestParticipation.find({"contest_id": contest_id}).delete()
+    
+    # Delete the contest
+    await contest.delete()
+    
+    return {"message": "Contest deleted successfully"}

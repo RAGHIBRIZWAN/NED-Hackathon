@@ -65,9 +65,9 @@ class AdminStatsResponse(BaseModel):
 
 # ============ Admin Check ============
 
-async def check_admin(current_user: User = Depends(get_current_user)) -> User:
+async def check_admin(current_user: dict = Depends(get_current_user)) -> dict:
     """Check if current user is admin."""
-    if current_user.role != "admin":
+    if current_user.get("role") != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required"
@@ -78,7 +78,7 @@ async def check_admin(current_user: User = Depends(get_current_user)) -> User:
 # ============ Routes ============
 
 @router.get("/stats", response_model=AdminStatsResponse)
-async def get_admin_stats(admin: User = Depends(check_admin)):
+async def get_admin_stats(admin: dict = Depends(check_admin)):
     """Get admin dashboard statistics."""
     total_users = await User.count()
     total_contests = await Contest.count()
@@ -99,7 +99,7 @@ async def get_admin_stats(admin: User = Depends(check_admin)):
 
 
 @router.post("/contests", response_model=ContestResponse, status_code=status.HTTP_201_CREATED)
-async def create_contest(request: CreateContestRequest, admin: User = Depends(check_admin)):
+async def create_contest(request: CreateContestRequest, admin: dict = Depends(check_admin)):
     """
     Create a new contest.
     
@@ -153,7 +153,7 @@ async def create_contest(request: CreateContestRequest, admin: User = Depends(ch
         is_public=request.is_public,
         max_participants=request.max_participants,
         status=status_val,
-        created_by=str(admin.id),
+        created_by=admin.get("user_id"),
         problems=contest_problems,
         tags=[]
     )
@@ -189,7 +189,7 @@ async def create_contest(request: CreateContestRequest, admin: User = Depends(ch
 async def list_admin_contests(
     status: Optional[str] = None,
     limit: int = 20,
-    admin: User = Depends(check_admin)
+    admin: dict = Depends(check_admin)
 ):
     """List all contests for admin management."""
     query = Contest.find()
@@ -219,7 +219,7 @@ async def list_admin_contests(
 async def update_contest(
     contest_id: str,
     request: CreateContestRequest,
-    admin: User = Depends(check_admin)
+    admin: dict = Depends(check_admin)
 ):
     """Update an existing contest."""
     contest = await Contest.get(contest_id)
@@ -235,9 +235,7 @@ async def update_contest(
     
     # Update fields
     contest.title = request.title
-    contest.title_ur = request.title_ur
     contest.description = request.description
-    contest.description_ur = request.description_ur
     contest.start_time = request.start_time
     contest.end_time = end_time
     contest.duration_minutes = request.duration_minutes
@@ -253,7 +251,7 @@ async def update_contest(
 
 
 @router.delete("/contests/{contest_id}")
-async def delete_contest(contest_id: str, admin: User = Depends(check_admin)):
+async def delete_contest(contest_id: str, admin: dict = Depends(check_admin)):
     """Delete a contest (soft delete by changing status)."""
     contest = await Contest.get(contest_id)
     if not contest:
@@ -272,7 +270,7 @@ async def list_users(
     role: Optional[str] = None,
     limit: int = 50,
     skip: int = 0,
-    admin: User = Depends(check_admin)
+    admin: dict = Depends(check_admin)
 ):
     """List all users for admin management."""
     query = User.find()
@@ -304,7 +302,7 @@ async def list_users(
 async def update_user_role(
     user_id: str,
     role: str,
-    admin: User = Depends(check_admin)
+    admin: dict = Depends(check_admin)
 ):
     """Update user role (admin/user)."""
     if role not in ["admin", "user"]:
@@ -333,7 +331,7 @@ async def broadcast_notification(
     message: str,
     title_ur: Optional[str] = None,
     message_ur: Optional[str] = None,
-    admin: User = Depends(check_admin)
+    admin: dict = Depends(check_admin)
 ):
     """Send a broadcast notification to all users."""
     notification = Notification(
