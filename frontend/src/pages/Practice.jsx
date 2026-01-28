@@ -22,7 +22,12 @@ import {
   BookOpen,
   Cpu,
   Layers,
-  Trophy
+  Trophy,
+  Lightbulb,
+  Sparkles,
+  Zap,
+  Target,
+  TrendingUp
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import api from '../services/api';
@@ -140,6 +145,10 @@ export default function Practice() {
   const [activeTab, setActiveTab] = useState('output');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  // AI Suggestions state
+  const [aiSuggestions, setAiSuggestions] = useState(null);
+  const [showAiModal, setShowAiModal] = useState(false);
 
   // Update category when URL params change
   useEffect(() => {
@@ -261,11 +270,24 @@ export default function Practice() {
         toast.error(`${data.verdict}: ${data.verdict_message}`);
       }
       
+      // Store AI suggestions if available
+      if (data.ai_suggestions) {
+        setAiSuggestions(data.ai_suggestions);
+      }
+      
       // Build detailed output
       let resultOutput = `Verdict: ${data.verdict}\n`;
       resultOutput += `${data.verdict_message}\n`;
       resultOutput += `Passed: ${data.passed_tests}/${data.total_tests} tests\n`;
       resultOutput += `Time: ${data.execution_time_ms}ms\n\n`;
+      
+      // Show AI Guidance if present
+      if (data.ai_guidance) {
+        resultOutput += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+        resultOutput += '🤖 AI TUTOR GUIDANCE\n';
+        resultOutput += '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+        resultOutput += data.ai_guidance + '\n\n';
+      }
       
       // Show OOP validation feedback if present
       if (data.oop_validation) {
@@ -544,28 +566,42 @@ export default function Practice() {
 
             {/* I/O Panel */}
             <div className="h-48 border-t border-gray-700">
-              <div className="flex border-b border-gray-700">
-                <button
-                  onClick={() => setActiveTab('output')}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                    activeTab === 'output'
-                      ? 'text-white border-b-2 border-blue-500 bg-gray-800'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  <Terminal size={16} />
-                  Output
-                </button>
-                <button
-                  onClick={() => setActiveTab('input')}
-                  className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
-                    activeTab === 'input'
-                      ? 'text-white border-b-2 border-blue-500 bg-gray-800'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Input
-                </button>
+              <div className="flex border-b border-gray-700 justify-between">
+                <div className="flex">
+                  <button
+                    onClick={() => setActiveTab('output')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                      activeTab === 'output'
+                        ? 'text-white border-b-2 border-blue-500 bg-gray-800'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Terminal size={16} />
+                    Output
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('input')}
+                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                      activeTab === 'input'
+                        ? 'text-white border-b-2 border-blue-500 bg-gray-800'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Input
+                  </button>
+                </div>
+                
+                {/* AI Suggestions Button */}
+                {aiSuggestions && (
+                  <button
+                    onClick={() => setShowAiModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 transition-colors animate-pulse"
+                  >
+                    <Lightbulb size={16} />
+                    AI Suggestions
+                    <Sparkles size={14} />
+                  </button>
+                )}
               </div>
               <div className="h-36 overflow-auto">
                 {activeTab === 'output' ? (
@@ -585,6 +621,117 @@ export default function Practice() {
                 )}
               </div>
             </div>
+            
+            {/* AI Suggestions Modal */}
+            <AnimatePresence>
+              {showAiModal && aiSuggestions && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                  onClick={() => setShowAiModal(false)}
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-gray-900 rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden border border-gray-700 shadow-2xl"
+                  >
+                    {/* Modal Header */}
+                    <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-b border-gray-700 p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 bg-yellow-500/20 rounded-xl">
+                            <Lightbulb className="w-6 h-6 text-yellow-400" />
+                          </div>
+                          <div>
+                            <h2 className="text-xl font-bold text-white">AI Code Review & Suggestions</h2>
+                            <p className="text-gray-400 text-sm">Powered by Groq LLM</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setShowAiModal(false)}
+                          className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Modal Content */}
+                    <div className="p-6 overflow-y-auto max-h-[calc(85vh-120px)] space-y-6">
+                      {/* Code Review */}
+                      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Code className="w-5 h-5 text-blue-400" />
+                          <h3 className="font-semibold text-white">Code Review</h3>
+                        </div>
+                        <p className="text-gray-300 leading-relaxed">{aiSuggestions.code_review}</p>
+                      </div>
+                      
+                      {/* Complexity Analysis */}
+                      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="w-5 h-5 text-purple-400" />
+                          <h3 className="font-semibold text-white">Complexity Analysis</h3>
+                        </div>
+                        <p className="text-gray-300 font-mono text-sm">{aiSuggestions.complexity_analysis}</p>
+                      </div>
+                      
+                      {/* Improvements */}
+                      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                        <div className="flex items-center gap-2 mb-3">
+                          <TrendingUp className="w-5 h-5 text-green-400" />
+                          <h3 className="font-semibold text-white">Suggested Improvements</h3>
+                        </div>
+                        <ul className="space-y-2">
+                          {aiSuggestions.improvements?.map((improvement, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-gray-300">
+                              <span className="text-green-400 mt-1">•</span>
+                              <span>{improvement}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      {/* Hints */}
+                      <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl p-4 border border-yellow-500/30">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Target className="w-5 h-5 text-yellow-400" />
+                          <h3 className="font-semibold text-white">Hints & Tips</h3>
+                        </div>
+                        <ul className="space-y-2">
+                          {aiSuggestions.hints?.map((hint, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-gray-300">
+                              <span className="text-yellow-400 mt-1">💡</span>
+                              <span>{hint}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      {/* Best Practices */}
+                      <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Sparkles className="w-5 h-5 text-cyan-400" />
+                          <h3 className="font-semibold text-white">Best Practices</h3>
+                        </div>
+                        <ul className="space-y-2">
+                          {aiSuggestions.best_practices?.map((practice, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-gray-300">
+                              <span className="text-cyan-400 mt-1">✓</span>
+                              <span>{practice}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </div>

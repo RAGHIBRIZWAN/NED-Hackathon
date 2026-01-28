@@ -450,10 +450,37 @@ async def check_mcq_answer(mcq_id: str, request: dict = Body(...)):
     
     is_correct = selected_option == mcq["correct_option"]
     
+    # Generate detailed explanation using Groq LLM
+    groq_explanation = None
+    try:
+        explanation_prompt = f"""You are a helpful programming tutor. A student just answered this multiple-choice question:
+
+Question: {mcq['question']}
+
+Options:
+{chr(10).join([f"{opt['id'].upper()}. {opt['text']}" for opt in mcq['options']])}
+
+Student selected: {selected_option.upper()}
+Correct answer: {mcq['correct_option'].upper()}
+
+Provide:
+1. A brief explanation of why the correct answer is right
+2. If the student was wrong, explain their misconception
+3. A helpful suggestion or tip to remember this concept
+
+Keep it concise (2-3 sentences) and encouraging."""
+
+        groq_explanation = await call_groq_api(explanation_prompt, temperature=0.7)
+    except Exception as e:
+        print(f"Failed to generate Groq explanation: {e}")
+        groq_explanation = mcq["explanation"]
+    
     return {
         "is_correct": is_correct,
         "correct_option": mcq["correct_option"],
-        "explanation": mcq["explanation"]
+        "explanation": mcq["explanation"],
+        "ai_explanation": groq_explanation,
+        "selected_option": selected_option
     }
 
 
@@ -676,6 +703,7 @@ async def submit_solution(
     passed_count = sum(1 for tr in test_results if tr.passed)
     total_count = len(test_cases)
     
+    # Determine verdict
     if all_passed:
         verdict = "AC"
         verdict_message = f"Accepted! All {total_count} test cases passed."
@@ -693,7 +721,55 @@ async def submit_solution(
         verdict = "WA"
         verdict_message = f"Wrong Answer on test {first_failed.test_number if first_failed else '?'}"
     
-    return SubmissionResult(
+    # Generate AI guidance and suggestions using Groq
+    ai_guidance = None
+    try:
+        if verdict != "AC":
+            # Generate helpful feedback for wrong solutions
+            first_failure = next((tr for tr in test_results if not tr.passed), None)
+            guidance_prompt = f"""You are a helpful programming tutor. A student submitted code for this problem:
+
+Problem: {problem['name']}
+Description: {problem['description'][:300]}...
+
+Their code ({request.language}):
+```{request.language}
+{request.code[:500]}...
+```
+
+Verdict: {verdict} - {verdict_message}
+Failed test input: {first_failure.input_data if first_failure else 'N/A'}
+Expected output: {first_failure.expected_output if first_failure else 'N/A'}
+Student's output: {first_failure.actual_output if first_failure else 'N/A'}
+
+Provide:
+1. What went wrong (briefly)
+2. A hint to fix it (don't give the full solution)
+3. A suggestion for improvement
+
+Keep it concise (3-4 sentences) and encouraging."""
+
+            ai_guidance = await call_groq_api(guidance_prompt, temperature=0.7)
+        else:
+            # Congratulatory message with optimization tips
+            guidance_prompt = f"""A student solved this problem correctly:
+
+Problem: {problem['name']}
+Their solution in {request.language} passed all test cases.
+
+Provide:
+1. A brief congratulation
+2. One tip for code optimization or best practices
+3. Encouragement to try harder problems
+
+Keep it concise (2-3 sentences) and positive."""
+
+            ai_guidance = await call_groq_api(guidance_prompt, temperature=0.7)
+    except Exception as e:
+        print(f"Failed to generate AI guidance: {e}")
+        ai_guidance = None
+    
+    result = SubmissionResult(
         verdict=verdict,
         verdict_message=verdict_message,
         passed_tests=passed_count,
@@ -701,6 +777,13 @@ async def submit_solution(
         execution_time_ms=total_time,
         test_results=test_results[:5]  # Only return first 5 test results
     )
+    
+    # Add AI guidance to response
+    return {
+        **result.dict(),
+        "ai_guidance": ai_guidance,
+        "problem_name": problem["name"]
+    }
 
 
 # ============ OOP Validation Helper ============
@@ -874,13 +957,49 @@ async def submit_module_solution(
         verdict = "WA"
         verdict_message = f"Wrong Answer on test {first_failed['test_number'] if first_failed else '?'}"
     
+    # Generate AI guidance for module submissions too
+    ai_guidance = None
+    try:
+        if verdict != "AC":
+            first_failure = next((tr for tr in test_results if not tr["passed"]), None)
+            guidance_prompt = f"""You are a helpful programming tutor for {problem.get('topic', 'programming')} module.
+
+Problem: {problem['name']}
+Description: {problem['description'][:300]}...
+
+Student's code ({request.language}):
+```{request.language}
+{request.code[:500]}...
+```
+
+Verdict: {verdict} - {verdict_message}
+Failed test: {first_failure['input_data'] if first_failure else 'N/A'}
+Expected: {first_failure['expected_output'] if first_failure else 'N/A'}
+Got: {first_failure['actual_output'] if first_failure else 'N/A'}
+
+Provide brief, encouraging guidance:
+1. What likely went wrong
+2. A hint to fix it
+3. A learning tip
+
+Keep it 3-4 sentences."""
+
+            ai_guidance = await call_groq_api(guidance_prompt, temperature=0.7)
+        else:
+            ai_guidance = f"Excellent work! Your solution for '{problem['name']}' is correct. Keep practicing to strengthen your {problem.get('topic', 'programming')} skills!"
+    except Exception as e:
+        print(f"Failed to generate AI guidance: {e}")
+        ai_guidance = None
+    
     response = {
         "verdict": verdict,
         "verdict_message": verdict_message,
         "passed_tests": passed_count,
         "total_tests": total_count,
         "execution_time_ms": total_time,
-        "test_results": test_results[:5]
+        "test_results": test_results[:5],
+        "ai_guidance": ai_guidance,
+        "problem_name": problem["name"]
     }
     
     # Add OOP validation info if applicable

@@ -63,6 +63,7 @@ class SubmissionResponse(BaseModel):
     test_results: List[TestCaseResult]
     failed_on_test: Optional[int] = None
     failed_details: Optional[dict] = None
+    ai_suggestions: Optional[dict] = None  # AI code review and suggestions
 
 
 # ============ LLM Test Case Generation ============
@@ -164,6 +165,116 @@ CRITICAL: Return ONLY the JSON array, no other text, no markdown formatting, no 
                 is_sample=True
             )
         ]
+
+
+# ============ AI Code Suggestions ============
+
+async def generate_code_suggestions(
+    source_code: str,
+    problem_statement: str,
+    verdict: str,
+    language: str,
+    failed_details: Optional[dict] = None
+) -> dict:
+    """
+    Generate AI suggestions for code improvement using Groq LLM.
+    
+    Returns:
+    {
+        "code_review": str,  # Comments on the code quality
+        "improvements": List[str],  # Ways to improve the code
+        "hints": List[str],  # Hints to solve the problem if failed
+        "best_practices": List[str],  # Best practices recommendations
+        "complexity_analysis": str,  # Time/space complexity analysis
+    }
+    """
+    
+    failure_context = ""
+    if failed_details:
+        failure_context = f"""
+The solution FAILED with the following details:
+- Input that failed: {failed_details.get('input', 'N/A')}
+- Expected output: {failed_details.get('expected', 'N/A')}
+- Actual output: {failed_details.get('actual', 'N/A')}
+- Error (if any): {failed_details.get('error', 'None')}
+"""
+    
+    prompt = f"""You are an expert programming mentor and code reviewer. Analyze the following code submission and provide helpful feedback.
+
+PROBLEM STATEMENT:
+{problem_statement[:2000]}  # Truncate if too long
+
+SUBMITTED CODE ({language}):
+```{language}
+{source_code}
+```
+
+VERDICT: {verdict}
+{failure_context}
+
+Provide a detailed analysis in the following JSON format:
+{{
+    "code_review": "A 2-3 sentence review of the code quality, readability, and approach",
+    "improvements": [
+        "Specific improvement suggestion 1",
+        "Specific improvement suggestion 2",
+        "Specific improvement suggestion 3"
+    ],
+    "hints": [
+        "Hint 1 to help solve the problem (if failed) or optimize (if passed)",
+        "Hint 2 with algorithmic insight",
+        "Hint 3 about edge cases to consider"
+    ],
+    "best_practices": [
+        "Best practice recommendation 1",
+        "Best practice recommendation 2"
+    ],
+    "complexity_analysis": "Time complexity: O(?), Space complexity: O(?). Brief explanation."
+}}
+
+CRITICAL: Return ONLY valid JSON, no markdown formatting, no additional text.
+"""
+
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert programming mentor. Always return valid JSON responses with helpful, constructive feedback."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            temperature=0.5,
+            max_tokens=2000
+        )
+        
+        import json
+        content = response.choices[0].message.content.strip()
+        
+        # Remove markdown code blocks if present
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+            content = content.strip()
+        
+        suggestions = json.loads(content)
+        return suggestions
+        
+    except Exception as e:
+        print(f"Error generating AI suggestions: {e}")
+        # Return basic fallback suggestions
+        return {
+            "code_review": "Unable to generate detailed review at this time.",
+            "improvements": ["Consider reviewing your approach", "Check edge cases"],
+            "hints": ["Review the problem constraints carefully", "Test with sample inputs"],
+            "best_practices": ["Use meaningful variable names", "Add comments for complex logic"],
+            "complexity_analysis": "Analysis unavailable"
+        }
 
 
 # ============ Code Execution Engine ============
@@ -383,6 +494,25 @@ async def submit_code(
     # Find first failed test
     failed_test = next((r for r in test_results if not r["passed"]), None)
     
+    # Step 3.5: Generate AI suggestions
+    print("Generating AI code suggestions...")
+    failed_details_for_ai = None
+    if failed_test:
+        failed_details_for_ai = {
+            "input": failed_test["input_data"],
+            "expected": failed_test["expected_output"],
+            "actual": failed_test.get("actual_output"),
+            "error": failed_test.get("error_message")
+        }
+    
+    ai_suggestions = await generate_code_suggestions(
+        source_code=request.source_code,
+        problem_statement=request.problem_statement,
+        verdict=verdict,
+        language=request.language,
+        failed_details=failed_details_for_ai
+    )
+    
     # Step 4: Save submission
     submission = Submission(
         user_id=str(current_user.id),
@@ -455,7 +585,8 @@ async def submit_code(
             "expected": failed_test["expected_output"],
             "actual": failed_test.get("actual_output"),
             "error": failed_test.get("error_message")
-        } if failed_test else None
+        } if failed_test else None,
+        ai_suggestions=ai_suggestions
     )
 
 

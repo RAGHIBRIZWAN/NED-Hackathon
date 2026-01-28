@@ -34,6 +34,7 @@ const Quiz = () => {
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [correctAnswer, setCorrectAnswer] = useState(null);
+  const [aiExplanation, setAiExplanation] = useState(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [quizComplete, setQuizComplete] = useState(false);
 
@@ -72,6 +73,7 @@ const Quiz = () => {
       setShowResult(true);
       setIsCorrect(data.is_correct);
       setCorrectAnswer(data.correct_option);
+      setAiExplanation(data.ai_explanation || data.explanation);
       
       if (data.is_correct) {
         setScore(prev => ({ ...prev, correct: prev.correct + 1 }));
@@ -109,6 +111,7 @@ const Quiz = () => {
       setSelectedAnswer(null);
       setShowResult(false);
       setCorrectAnswer(null);
+      setAiExplanation(null);
     } else {
       setQuizComplete(true);
     }
@@ -120,6 +123,7 @@ const Quiz = () => {
       setSelectedAnswer(null);
       setShowResult(false);
       setCorrectAnswer(null);
+      setAiExplanation(null);
     }
   };
 
@@ -337,19 +341,34 @@ const Quiz = () => {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`p-4 rounded-xl mb-6 ${
+                className={`mb-6 ${
                   isCorrect ? 'bg-green-500/20 border border-green-500/50' : 'bg-red-500/20 border border-red-500/50'
-                }`}
+                } rounded-xl overflow-hidden`}
               >
-                <div className="flex items-center gap-2">
-                  {isCorrect ? (
-                    <CheckCircle className="w-5 h-5 text-green-400" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-red-400" />
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    {isCorrect ? (
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-400" />
+                    )}
+                    <span className={`font-semibold ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                      {isCorrect ? 'Correct! Well done!' : `Incorrect. The correct answer is ${correctAnswer?.toUpperCase()}.`}
+                    </span>
+                  </div>
+                  
+                  {/* AI Explanation */}
+                  {aiExplanation && (
+                    <div className="mt-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                      <div className="flex items-start gap-2 mb-2">
+                        <span className="text-xl">🤖</span>
+                        <span className="font-semibold text-blue-400">AI Tutor Explanation</span>
+                      </div>
+                      <p className="text-gray-300 leading-relaxed whitespace-pre-line">
+                        {aiExplanation}
+                      </p>
+                    </div>
                   )}
-                  <span className={isCorrect ? 'text-green-400' : 'text-red-400'}>
-                    {isCorrect ? 'Correct! Well done!' : `Incorrect. The correct answer is ${correctAnswer?.toUpperCase()}.`}
-                  </span>
                 </div>
               </motion.div>
             )}
