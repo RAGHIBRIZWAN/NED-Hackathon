@@ -70,18 +70,25 @@ const Compete = () => {
 
   const contests = contestsData?.contests || [];
 
-  // Countdown timer logic
+  // Countdown timer logic for both upcoming and ongoing contests
   useEffect(() => {
-    if (activeTab !== 'upcoming') return;
+    if (activeTab === 'past') return;
 
     const updateCountdowns = () => {
       const newCountdowns = {};
       contests.forEach(contest => {
-        const startTime = new Date(contest.start_time).getTime();
         const now = Date.now();
-        const diff = startTime - now;
+        let diff;
+        
+        if (activeTab === 'upcoming') {
+          const startTime = new Date(contest.start_time).getTime();
+          diff = startTime - now;
+        } else if (activeTab === 'ongoing') {
+          const endTime = new Date(contest.end_time).getTime();
+          diff = endTime - now;
+        }
 
-        if (diff > 0) {
+        if (diff && diff > 0) {
           const days = Math.floor(diff / (1000 * 60 * 60 * 24));
           const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
           const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -126,27 +133,36 @@ const Compete = () => {
     { id: 'past', label: 'Past', icon: Trophy, color: 'gray' },
   ];
 
-  const CountdownTimer = ({ countdown }) => {
+  const CountdownTimer = ({ countdown, label = "Starts in" }) => {
     if (!countdown) return null;
 
     const { days, hours, minutes, seconds } = countdown;
     
     return (
-      <div className="flex items-center gap-1 text-sm">
-        {days > 0 && (
-          <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-mono">
-            {days}d
-          </span>
-        )}
-        <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-mono">
-          {String(hours).padStart(2, '0')}h
-        </span>
-        <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-mono">
-          {String(minutes).padStart(2, '0')}m
-        </span>
-        <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded font-mono">
-          {String(seconds).padStart(2, '0')}s
-        </span>
+      <div className="flex flex-col items-end gap-2">
+        <p className="text-gray-400 text-xs uppercase tracking-wide">{label}</p>
+        <div className="flex items-center gap-1.5">
+          {days > 0 && (
+            <div className="flex flex-col items-center bg-blue-500/20 text-blue-400 px-3 py-2 rounded-lg border border-blue-500/30">
+              <span className="text-lg font-bold font-mono">{days}</span>
+              <span className="text-xs text-gray-400">days</span>
+            </div>
+          )}
+          <div className="flex flex-col items-center bg-blue-500/20 text-blue-400 px-3 py-2 rounded-lg border border-blue-500/30">
+            <span className="text-lg font-bold font-mono">{String(hours).padStart(2, '0')}</span>
+            <span className="text-xs text-gray-400">hrs</span>
+          </div>
+          <span className="text-blue-400 text-xl font-bold">:</span>
+          <div className="flex flex-col items-center bg-blue-500/20 text-blue-400 px-3 py-2 rounded-lg border border-blue-500/30">
+            <span className="text-lg font-bold font-mono">{String(minutes).padStart(2, '0')}</span>
+            <span className="text-xs text-gray-400">min</span>
+          </div>
+          <span className="text-blue-400 text-xl font-bold">:</span>
+          <div className="flex flex-col items-center bg-blue-500/20 text-blue-400 px-3 py-2 rounded-lg border border-blue-500/30">
+            <span className="text-lg font-bold font-mono">{String(seconds).padStart(2, '0')}</span>
+            <span className="text-xs text-gray-400">sec</span>
+          </div>
+        </div>
       </div>
     );
   };
@@ -320,18 +336,19 @@ const Compete = () => {
                   {/* Countdown / Action */}
                   <div className="flex flex-col items-end gap-3">
                     {activeTab === 'upcoming' && countdowns[contest.id] && (
-                      <div className="text-right">
-                        <p className="text-gray-500 text-xs mb-1">Starts in</p>
-                        <CountdownTimer countdown={countdowns[contest.id]} />
-                      </div>
+                      <CountdownTimer countdown={countdowns[contest.id]} label="Starts in" />
                     )}
 
                     {activeTab === 'ongoing' && (
-                      <div className="text-right">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm animate-pulse">
-                          <span className="w-2 h-2 bg-green-400 rounded-full" />
-                          Live Now
-                        </span>
+                      <div className="flex flex-col items-end gap-2">
+                        {countdowns[contest.id] ? (
+                          <CountdownTimer countdown={countdowns[contest.id]} label="Ends in" />
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm animate-pulse">
+                            <span className="w-2 h-2 bg-green-400 rounded-full" />
+                            Live Now
+                          </span>
+                        )}
                       </div>
                     )}
 

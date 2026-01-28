@@ -1,6 +1,8 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Home, 
   BookOpen, 
@@ -17,18 +19,35 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useGamificationStore } from '../stores/gamificationStore';
+import { gamifyAPI } from '../services/api';
 
 const Layout = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const { user, logout } = useAuthStore();
-  const { level, xp, xpToNextLevel, coins, currentStreak } = useGamificationStore();
+  const { level, xp, xpToNextLevel, coins, currentStreak, updateGamification } = useGamificationStore();
+
+  // Fetch gamification data
+  const { data: gamifyData } = useQuery({
+    queryKey: ['gamification'],
+    queryFn: async () => {
+      const response = await gamifyAPI.getProfile();
+      return response.data;
+    },
+  });
+
+  // Update gamification store when data is fetched
+  useEffect(() => {
+    if (gamifyData) {
+      updateGamification(gamifyData);
+    }
+  }, [gamifyData, updateGamification]);
 
   // Check if user is admin
   const isAdmin = user?.role === 'admin';
 
-  // Base navigation items (Practice removed - now integrated into CP Practice)
-  const baseNavItems = [
+  // Base navigation items for regular users
+  const userNavItems = [
     { path: '/dashboard', icon: Home, label: t('nav.home') },
     { path: '/courses', icon: BookOpen, label: t('nav.learn') },
     { path: '/compete', icon: Trophy, label: t('nav.compete') },
@@ -37,10 +56,13 @@ const Layout = () => {
     { path: '/profile', icon: User, label: t('nav.profile') },
   ];
 
-  // Add Admin tab if user is admin
-  const navItems = isAdmin 
-    ? [...baseNavItems.slice(0, -1), { path: '/admin', icon: Shield, label: t('nav.admin') }, baseNavItems[baseNavItems.length - 1]]
-    : baseNavItems;
+  // Admin users only see Admin tab
+  const adminNavItems = [
+    { path: '/admin', icon: Shield, label: t('nav.admin') || 'Admin' },
+  ];
+
+  // Use admin nav items for admin, regular nav items for others
+  const navItems = isAdmin ? adminNavItems : userNavItems;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex">

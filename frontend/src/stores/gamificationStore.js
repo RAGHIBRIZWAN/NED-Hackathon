@@ -16,14 +16,14 @@ export const useGamificationStore = create((set, get) => ({
   
   // Actions
   updateGamification: (data) => set({
-    level: data.level || get().level,
-    xp: data.xp || get().xp,
-    xpToNextLevel: data.xp_to_next_level || get().xpToNextLevel,
-    coins: data.coins || get().coins,
-    currentStreak: data.current_streak || get().currentStreak,
-    badges: data.badges || get().badges,
-    achievements: data.achievements || get().achievements,
-    unlockedThemes: data.unlocked_themes || get().unlockedThemes,
+    level: data.level ?? get().level,
+    xp: data.xp ?? get().xp,
+    xpToNextLevel: data.xp_to_next_level ?? (data.level ? data.level * 100 : get().xpToNextLevel),
+    coins: data.coins ?? get().coins,
+    currentStreak: data.current_streak ?? get().currentStreak,
+    badges: data.badges ?? get().badges,
+    achievements: data.achievements ?? get().achievements,
+    unlockedThemes: data.unlocked_themes ?? get().unlockedThemes,
   }),
   
   addCoins: (amount) => set((state) => ({

@@ -135,7 +135,7 @@ async def create_contest(request: CreateContestRequest, admin: dict = Depends(ch
             codeforces_tags=prob.tags,
             codeforces_url=f"https://codeforces.com/problemset/problem/{prob.contest_id}/{prob.index}",
             points=100,  # Default points
-            order=i + 1
+            order=i
         )
         for i, prob in enumerate(request.problems)
     ]

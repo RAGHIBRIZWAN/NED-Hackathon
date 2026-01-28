@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -26,7 +26,7 @@ import toast from 'react-hot-toast';
 const Profile = () => {
   const { t } = useTranslation();
   const { user, updateUser } = useAuthStore();
-  const { level, xp, xpToNextLevel, coins, currentStreak, badges } = useGamificationStore();
+  const { level, xp, xpToNextLevel, coins, currentStreak, badges, updateGamification } = useGamificationStore();
   const { programmingLanguage, setProgrammingLanguage } = useSettingsStore();
   
   const [isEditing, setIsEditing] = useState(false);
@@ -42,6 +42,22 @@ const Profile = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [showPhotoPreview, setShowPhotoPreview] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+
+  // Fetch gamification data
+  const { data: gamifyData } = useQuery({
+    queryKey: ['gamification'],
+    queryFn: async () => {
+      const response = await gamifyAPI.getProfile();
+      return response.data;
+    },
+  });
+
+  // Update gamification store when data is fetched
+  useEffect(() => {
+    if (gamifyData) {
+      updateGamification(gamifyData);
+    }
+  }, [gamifyData, updateGamification]);
 
   // Fetch achievements
   const { data: achievementsData } = useQuery({

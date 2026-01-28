@@ -34,18 +34,24 @@ const Contest = () => {
   // Fetch contest
   const { data: contestData, isLoading } = useQuery({
     queryKey: ['contest', id],
-    queryFn: () => competeAPI.getContest(id),
+    queryFn: async () => {
+      const response = await competeAPI.getContest(id);
+      return response.data;
+    },
   });
 
   // Fetch leaderboard
   const { data: leaderboardData } = useQuery({
     queryKey: ['contestLeaderboard', id],
-    queryFn: () => competeAPI.getContestLeaderboard(id),
+    queryFn: async () => {
+      const response = await competeAPI.getContestLeaderboard(id);
+      return response.data;
+    },
   });
 
-  const contest = contestData?.data;
+  const contest = contestData;
   const problems = contest?.problems || [];
-  const leaderboard = leaderboardData?.data?.leaderboard || [];
+  const leaderboard = leaderboardData?.leaderboard || [];
 
   // Timer
   useEffect(() => {

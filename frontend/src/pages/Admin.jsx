@@ -9,7 +9,6 @@ import {
   Plus,
   Edit,
   Trash2,
-  Bell,
   Settings,
   BarChart3,
   Loader2,
@@ -48,35 +47,39 @@ const Admin = () => {
   });
 
   // Fetch admin stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['adminStats'],
     queryFn: () => api.get('/admin/stats').then(res => res.data),
+    retry: 1
   });
 
   // Fetch contests
-  const { data: contests, isLoading: contestsLoading } = useQuery({
+  const { data: contests, isLoading: contestsLoading, error: contestsError } = useQuery({
     queryKey: ['adminContests'],
     queryFn: () => api.get('/admin/contests').then(res => res.data),
+    retry: 1
   });
 
   // Fetch users
-  const { data: usersData, isLoading: usersLoading } = useQuery({
+  const { data: usersData, isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['adminUsers'],
     queryFn: () => api.get('/admin/users').then(res => res.data),
+    retry: 1
   });
 
   // Create contest mutation
   const createContestMutation = useMutation({
-    mutationFn: (data) => api.post('/admin/contests', data),
-    onSuccess: () => {
-      toast.success('Contest created successfully! Notification sent to all users.');
-      queryClient.invalidateQueries(['adminContests']);
-      queryClient.invalidateQueries(['adminStats']);
-      setShowContestForm(false);
-      resetContestForm();
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.detail || 'Failed to create contest');
+    mutationFn: async (data) => {
+      console.log('Mutation function called with:', data);
+      try {
+        const response = await api.post('/admin/contests', data);
+        console.log('Contest created successfully:', response.data);
+        return response.data;
+      } catch (err) {
+        console.error('API Error:', err);
+        console.error('Error Response:', err.response?.data);
+        throw err;
+      }
     }
   });
 
@@ -173,19 +176,71 @@ const Admin = () => {
     );
   }
 
-  const handleContestSubmit = (e) => {
+  const handleContestSubmit = async (e) => {
     e.preventDefault();
-    createContestMutation.mutate({
-      ...contestForm,
-      start_time: new Date(contestForm.start_time).toISOString()
-    });
+    
+    console.log('=== Contest Submit Started ===');
+    console.log('Contest Form:', contestForm);
+    
+    // Validate that problems are added
+    if (contestForm.problems.length === 0) {
+      console.error('No problems added');
+      toast.error('Please add at least one problem to the contest');
+      return;
+    }
+    
+    try {
+      // Format the contest data properly and ensure types are correct
+      const contestData = {
+        title: contestForm.title,
+        description: contestForm.description,
+        start_time: new Date(contestForm.start_time).toISOString(),
+        duration_minutes: parseInt(contestForm.duration_minutes),
+        difficulty: contestForm.difficulty,
+        contest_type: contestForm.contest_type,
+        is_public: contestForm.is_public,
+        max_participants: contestForm.max_participants || null,
+        problems: contestForm.problems.map(p => ({
+          contest_id: parseInt(p.contest_id),
+          index: p.index,
+          name: p.name,
+          rating: p.rating ? parseInt(p.rating) : null,
+          tags: Array.isArray(p.tags) ? p.tags : []
+        }))
+      };
+      
+      console.log('=== Submitting Contest Data ===', contestData);
+      console.log('Problems array:', JSON.stringify(contestData.problems, null, 2));
+      
+      // Submit mutation
+      const result = await createContestMutation.mutateAsync(contestData);
+      
+      // Success - only execute if mutation succeeds
+      console.log('=== Contest Submit Completed ===', result);
+      toast.success('Contest created successfully! Notification sent to all users.');
+      
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['adminContests'] });
+      await queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      await queryClient.invalidateQueries({ queryKey: ['contests'] });
+      
+      // Reset form and close modal
+      setShowContestForm(false);
+      resetContestForm();
+      
+    } catch (error) {
+      console.error('=== Contest Submit Error ===');
+      console.error('Error:', error);
+      console.error('Error response:', error.response);
+      console.error('Error message:', error.message);
+      toast.error(error.response?.data?.detail || error.message || 'Failed to create contest');
+    }
   };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'contests', label: 'Contests', icon: Trophy },
     { id: 'users', label: 'Users', icon: Users },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
 
   return (
@@ -409,37 +464,6 @@ const Admin = () => {
               </tbody>
             </table>
           )}
-        </div>
-      )}
-
-      {/* Notifications Tab */}
-      {activeTab === 'notifications' && (
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Broadcast Notification</h3>
-          <form className="space-y-4">
-            <div>
-              <label className="block text-gray-400 text-sm mb-2">Title</label>
-              <input
-                type="text"
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                placeholder="Notification title..."
-              />
-            </div>
-            <div>
-              <label className="block text-gray-400 text-sm mb-2">Message</label>
-              <textarea
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 h-32 resize-none"
-                placeholder="Write your message..."
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
-            >
-              <Bell size={20} />
-              <span>Send to All Users</span>
-            </button>
-          </form>
         </div>
       )}
 
