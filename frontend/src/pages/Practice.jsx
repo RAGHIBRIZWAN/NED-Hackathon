@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -89,7 +90,18 @@ console.log(result);
   },
 };
 
+const MODULE_NAMES = {
+  'programming-fundamentals': 'Programming Fundamentals',
+  'oop': 'Object-Oriented Programming',
+  'data-structures': 'Data Structures'
+};
+
 export default function Practice() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const moduleId = searchParams.get('module');
+  const problemIdFromUrl = searchParams.get('problem');
+  
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [ratingMin, setRatingMin] = useState('');
@@ -107,7 +119,17 @@ export default function Practice() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
   
-  // Fetch CP problems from new API
+  // Fetch module-based coding problems if moduleId is present
+  const { data: moduleProblems, isLoading: moduleLoading } = useQuery({
+    queryKey: ['module-problems', moduleId],
+    queryFn: async () => {
+      const response = await api.get(`/problems/modules/${moduleId}/coding`);
+      return response.data;
+    },
+    enabled: !!moduleId
+  });
+  
+  // Fetch CP problems if no moduleId
   const { data, isLoading, error } = useQuery({
     queryKey: ['cp-problems', page, ratingMin, ratingMax, selectedDifficulty],
     queryFn: async () => {
@@ -121,14 +143,26 @@ export default function Practice() {
       const response = await api.get(`/problems/cp/problems?${params.toString()}`);
       return response.data;
     },
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    enabled: !moduleId
   });
   
-  // Fetch problem details
+  // Auto-select problem from URL
+  useEffect(() => {
+    if (problemIdFromUrl && moduleProblems?.problems) {
+      const problem = moduleProblems.problems.find(p => p.id === problemIdFromUrl);
+      if (problem) {
+        setSelectedProblem(problem);
+      }
+    }
+  }, [problemIdFromUrl, moduleProblems]);
+  
+  // Fetch problem details (works for both CP and module problems)
   const { data: problemData, isLoading: problemLoading } = useQuery({
-    queryKey: ['cp-problem', selectedProblem?.id],
+    queryKey: ['problem-detail', selectedProblem?.id],
     queryFn: async () => {
-      const response = await api.get(`/problems/cp/problems/${selectedProblem.id}`);
+      // Use module coding endpoint for module problems
+      const response = await api.get(`/problems/modules/coding/${selectedProblem.id}`);
       return response.data;
     },
     enabled: !!selectedProblem
@@ -605,29 +639,50 @@ export default function Practice() {
           </AnimatePresence>
         </motion.div>
 
+        {/* Module Header (if viewing module problems) */}
+        {moduleId && (
+          <div className="mb-6">
+            <button
+              onClick={() => navigate('/courses')}
+              className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              Back to Courses
+            </button>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              {MODULE_NAMES[moduleId] || moduleId} - Coding Problems
+            </h2>
+            <p className="text-gray-400">
+              {moduleProblems?.total || 0} problems available
+            </p>
+          </div>
+        )}
+
         {/* Results Info */}
-        {data && (
+        {!moduleId && data && (
           <div className="text-gray-400 text-sm mb-4">
             Showing {((page - 1) * 20) + 1}-{Math.min(page * 20, data.total)} of {data.total} problems
           </div>
         )}
 
         {/* Problems List */}
-        {isLoading ? (
+        {(moduleId ? moduleLoading : isLoading) ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
-        ) : error ? (
+        ) : (moduleId ? false : error) ? (
           <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
             <p className="text-red-400">Failed to load problems. Please try again later.</p>
           </div>
-        ) : data?.problems.length === 0 ? (
+        ) : (moduleId ? moduleProblems?.problems?.length === 0 : data?.problems?.length === 0) ? (
           <div className="bg-gray-800/50 rounded-xl p-10 text-center">
             <Search className="w-12 h-12 text-gray-600 mx-auto mb-4" />
             <p className="text-gray-400">No problems found matching your criteria.</p>
-            <button onClick={clearFilters} className="mt-4 text-primary hover:underline">
-              Clear all filters
-            </button>
+            {!moduleId && (
+              <button onClick={clearFilters} className="mt-4 text-primary hover:underline">
+                Clear all filters
+              </button>
+            )}
           </div>
         ) : (
           <motion.div
@@ -635,7 +690,7 @@ export default function Practice() {
             animate={{ opacity: 1 }}
             className="space-y-3"
           >
-            {data?.problems.map((problem, index) => (
+            {(moduleId ? moduleProblems?.problems : data?.problems)?.map((problem, index) => (
               <motion.div
                 key={problem.id}
                 initial={{ opacity: 0, y: 20 }}

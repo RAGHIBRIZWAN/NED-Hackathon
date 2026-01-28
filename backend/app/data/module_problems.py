@@ -424,6 +424,201 @@ PF_CODING_PROBLEMS = [
             {"input": "0 5", "output": "5"},
             {"input": "12 12", "output": "12"}
         ]
+    },
+    {
+        "id": "pf-code-011",
+        "name": "Count Vowels",
+        "difficulty": "easy",
+        "topic": "Strings",
+        "description": "Count the number of vowels (a, e, i, o, u) in a given string (case-insensitive).",
+        "input_format": "A single string s.",
+        "output_format": "Print the count of vowels.",
+        "examples": [
+            {"input": "hello", "output": "2"},
+            {"input": "AEIOU", "output": "5"}
+        ],
+        "test_cases": [
+            {"input": "hello", "output": "2"},
+            {"input": "AEIOU", "output": "5"},
+            {"input": "xyz", "output": "0"},
+            {"input": "Programming", "output": "3"},
+            {"input": "Education", "output": "5"}
+        ]
+    },
+    {
+        "id": "pf-code-012",
+        "name": "Palindrome Check",
+        "difficulty": "medium",
+        "topic": "Strings",
+        "description": "Check if a given string is a palindrome (reads same forwards and backwards).",
+        "input_format": "A single string s.",
+        "output_format": "Print 'Yes' if palindrome, 'No' otherwise.",
+        "examples": [
+            {"input": "racecar", "output": "Yes"},
+            {"input": "hello", "output": "No"}
+        ],
+        "test_cases": [
+            {"input": "racecar", "output": "Yes"},
+            {"input": "hello", "output": "No"},
+            {"input": "madam", "output": "Yes"},
+            {"input": "A", "output": "Yes"},
+            {"input": "python", "output": "No"}
+        ]
+    },
+    {
+        "id": "pf-code-013",
+        "name": "Sum of Digits",
+        "difficulty": "easy",
+        "topic": "Loops",
+        "description": "Calculate the sum of digits of a given integer.",
+        "input_format": "A single integer n.",
+        "output_format": "Print the sum of digits.",
+        "examples": [
+            {"input": "123", "output": "6"},
+            {"input": "4567", "output": "22"}
+        ],
+        "test_cases": [
+            {"input": "123", "output": "6"},
+            {"input": "4567", "output": "22"},
+            {"input": "0", "output": "0"},
+            {"input": "999", "output": "27"},
+            {"input": "100", "output": "1"}
+        ]
+    },
+    {
+        "id": "pf-code-014",
+        "name": "Find Maximum in Array",
+        "difficulty": "easy",
+        "topic": "Arrays",
+        "description": "Find the maximum element in an array.",
+        "input_format": "First line: n. Second line: n integers.",
+        "output_format": "Print the maximum element.",
+        "examples": [
+            {"input": "5\n1 5 3 9 2", "output": "9"},
+            {"input": "3\n-1 -5 -3", "output": "-1"}
+        ],
+        "test_cases": [
+            {"input": "5\n1 5 3 9 2", "output": "9"},
+            {"input": "3\n-1 -5 -3", "output": "-1"},
+            {"input": "1\n100", "output": "100"},
+            {"input": "4\n10 20 30 40", "output": "40"},
+            {"input": "6\n5 5 5 5 5 5", "output": "5"}
+        ]
+    },
+    {
+        "id": "pf-code-015",
+        "name": "Count Words",
+        "difficulty": "medium",
+        "topic": "Strings",
+        "description": "Count the number of words in a given sentence.",
+        "input_format": "A single line containing a sentence.",
+        "output_format": "Print the word count.",
+        "examples": [
+            {"input": "Hello World", "output": "2"},
+            {"input": "I love programming", "output": "3"}
+        ],
+        "test_cases": [
+            {"input": "Hello World", "output": "2"},
+            {"input": "I love programming", "output": "3"},
+            {"input": "Python", "output": "1"},
+            {"input": "The quick brown fox", "output": "4"},
+            {"input": "A B C D E", "output": "5"}
+        ]
+    },
+    {
+        "id": "pf-code-016",
+        "name": "Multiplication Table",
+        "difficulty": "easy",
+        "topic": "Loops",
+        "description": "Print the multiplication table of a given number from 1 to 10.",
+        "input_format": "A single integer n.",
+        "output_format": "Print 10 lines, each showing n x i = result (i from 1 to 10).",
+        "examples": [
+            {"input": "5", "output": "5\n10\n15\n20\n25\n30\n35\n40\n45\n50"}
+        ],
+        "test_cases": [
+            {"input": "5", "output": "5\n10\n15\n20\n25\n30\n35\n40\n45\n50"},
+            {"input": "2", "output": "2\n4\n6\n8\n10\n12\n14\n16\n18\n20"},
+            {"input": "1", "output": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10"}
+        ]
+    },
+    {
+        "id": "pf-code-017",
+        "name": "Armstrong Number",
+        "difficulty": "medium",
+        "topic": "Loops",
+        "description": "Check if a number is an Armstrong number (sum of cubes of digits equals the number).",
+        "input_format": "A single integer n.",
+        "output_format": "Print 'Yes' if Armstrong number, 'No' otherwise.",
+        "examples": [
+            {"input": "153", "output": "Yes"},
+            {"input": "123", "output": "No"}
+        ],
+        "test_cases": [
+            {"input": "153", "output": "Yes"},
+            {"input": "123", "output": "No"},
+            {"input": "370", "output": "Yes"},
+            {"input": "9", "output": "Yes"},
+            {"input": "100", "output": "No"}
+        ]
+    },
+    {
+        "id": "pf-code-018",
+        "name": "Second Largest",
+        "difficulty": "medium",
+        "topic": "Arrays",
+        "description": "Find the second largest element in an array.",
+        "input_format": "First line: n. Second line: n integers.",
+        "output_format": "Print the second largest element.",
+        "examples": [
+            {"input": "5\n1 5 3 9 2", "output": "5"},
+            {"input": "4\n10 20 30 40", "output": "30"}
+        ],
+        "test_cases": [
+            {"input": "5\n1 5 3 9 2", "output": "5"},
+            {"input": "4\n10 20 30 40", "output": "30"},
+            {"input": "3\n5 5 1", "output": "1"},
+            {"input": "6\n100 200 150 175 190 180", "output": "190"}
+        ]
+    },
+    {
+        "id": "pf-code-019",
+        "name": "Leap Year",
+        "difficulty": "medium",
+        "topic": "Control Flow",
+        "description": "Check if a year is a leap year.",
+        "input_format": "A single integer year.",
+        "output_format": "Print 'Yes' if leap year, 'No' otherwise.",
+        "examples": [
+            {"input": "2020", "output": "Yes"},
+            {"input": "2021", "output": "No"}
+        ],
+        "test_cases": [
+            {"input": "2020", "output": "Yes"},
+            {"input": "2021", "output": "No"},
+            {"input": "2000", "output": "Yes"},
+            {"input": "1900", "output": "No"},
+            {"input": "2024", "output": "Yes"}
+        ]
+    },
+    {
+        "id": "pf-code-020",
+        "name": "Remove Duplicates",
+        "difficulty": "hard",
+        "topic": "Arrays",
+        "description": "Remove duplicate elements from an array and print unique elements in order.",
+        "input_format": "First line: n. Second line: n integers.",
+        "output_format": "Print unique elements separated by space.",
+        "examples": [
+            {"input": "6\n1 2 2 3 4 3", "output": "1 2 3 4"},
+            {"input": "5\n5 5 5 5 5", "output": "5"}
+        ],
+        "test_cases": [
+            {"input": "6\n1 2 2 3 4 3", "output": "1 2 3 4"},
+            {"input": "5\n5 5 5 5 5", "output": "5"},
+            {"input": "4\n1 2 3 4", "output": "1 2 3 4"},
+            {"input": "7\n10 20 10 30 20 40 10", "output": "10 20 30 40"}
+        ]
     }
 ]
 
@@ -743,6 +938,277 @@ OOP_CODING_PROBLEMS = [
             {"input": "Bob\n4\n70 65 72 68", "output": "68.75\nD"},
             {"input": "Charlie\n2\n100 100", "output": "100.00\nA"},
             {"input": "David\n3\n50 55 45", "output": "50.00\nF"}
+        ]
+    },
+    {
+        "id": "oop-code-006",
+        "name": "Book Library System",
+        "difficulty": "medium",
+        "topic": "Classes & Objects",
+        "description": "Create a Book class with title, author, isbn. Create a Library class to add_book, find_book_by_isbn, and list_all_books.",
+        "input_format": "Commands: ADD title|author|isbn, FIND isbn, LIST",
+        "output_format": "For FIND: print title and author or 'Not found'. For LIST: print count of books.",
+        "examples": [
+            {"input": "ADD The Alchemist|Paulo Coelho|123\nFIND 123", "output": "The Alchemist by Paulo Coelho"},
+            {"input": "ADD Book1|Author1|001\nADD Book2|Author2|002\nLIST", "output": "2"}
+        ],
+        "test_cases": [
+            {"input": "ADD The Alchemist|Paulo Coelho|123\nFIND 123", "output": "The Alchemist by Paulo Coelho"},
+            {"input": "ADD Book1|Author1|001\nADD Book2|Author2|002\nLIST", "output": "2"},
+            {"input": "FIND 999", "output": "Not found"}
+        ]
+    },
+    {
+        "id": "oop-code-007",
+        "name": "Vehicle Hierarchy",
+        "difficulty": "medium",
+        "topic": "Inheritance",
+        "description": "Create Vehicle base class with make and model. Create Car and Bike subclasses with specific attributes. Implement display_info method.",
+        "input_format": "Type (Car/Bike), make, model, specific_attr (doors for Car, type for Bike).",
+        "output_format": "Print vehicle information.",
+        "examples": [
+            {"input": "Car\nToyota\nCamry\n4", "output": "Car: Toyota Camry, Doors: 4"},
+            {"input": "Bike\nHonda\nCBR\nSport", "output": "Bike: Honda CBR, Type: Sport"}
+        ],
+        "test_cases": [
+            {"input": "Car\nToyota\nCamry\n4", "output": "Car: Toyota Camry, Doors: 4"},
+            {"input": "Bike\nHonda\nCBR\nSport", "output": "Bike: Honda CBR, Type: Sport"},
+            {"input": "Car\nFord\nMustang\n2", "output": "Car: Ford Mustang, Doors: 2"}
+        ]
+    },
+    {
+        "id": "oop-code-008",
+        "name": "Shopping Cart",
+        "difficulty": "medium",
+        "topic": "Classes & Objects",
+        "description": "Create Item class with name and price. Create Cart class with add_item, remove_item, and get_total methods.",
+        "input_format": "Commands: ADD name price, REMOVE name, TOTAL",
+        "output_format": "For TOTAL: print total price.",
+        "examples": [
+            {"input": "ADD Apple 100\nADD Banana 50\nTOTAL", "output": "150"},
+            {"input": "ADD Item1 200\nADD Item2 300\nREMOVE Item1\nTOTAL", "output": "300"}
+        ],
+        "test_cases": [
+            {"input": "ADD Apple 100\nADD Banana 50\nTOTAL", "output": "150"},
+            {"input": "ADD Item1 200\nADD Item2 300\nREMOVE Item1\nTOTAL", "output": "300"},
+            {"input": "ADD X 500\nTOTAL", "output": "500"}
+        ]
+    },
+    {
+        "id": "oop-code-009",
+        "name": "Employee Management",
+        "difficulty": "hard",
+        "topic": "Encapsulation",
+        "description": "Create Employee class with private attributes _name and _salary. Implement getter/setter methods with validation (salary must be positive).",
+        "input_format": "Commands: SET_NAME name, SET_SALARY amount, GET_NAME, GET_SALARY",
+        "output_format": "Print requested information or 'Invalid' for invalid salary.",
+        "examples": [
+            {"input": "SET_NAME John\nSET_SALARY 50000\nGET_NAME\nGET_SALARY", "output": "John\n50000"},
+            {"input": "SET_SALARY -100", "output": "Invalid"}
+        ],
+        "test_cases": [
+            {"input": "SET_NAME John\nSET_SALARY 50000\nGET_NAME", "output": "John"},
+            {"input": "SET_SALARY -100", "output": "Invalid"},
+            {"input": "SET_NAME Alice\nGET_NAME", "output": "Alice"}
+        ]
+    },
+    {
+        "id": "oop-code-010",
+        "name": "Shape Calculator",
+        "difficulty": "medium",
+        "topic": "Polymorphism",
+        "description": "Create Shape base class with area method. Create Circle and Rectangle subclasses implementing area calculation.",
+        "input_format": "Shape type (Circle/Rectangle) and dimensions (radius for Circle, length width for Rectangle).",
+        "output_format": "Print area (2 decimal places).",
+        "examples": [
+            {"input": "Circle\n5", "output": "78.54"},
+            {"input": "Rectangle\n4 6", "output": "24.00"}
+        ],
+        "test_cases": [
+            {"input": "Circle\n5", "output": "78.54"},
+            {"input": "Rectangle\n4 6", "output": "24.00"},
+            {"input": "Circle\n10", "output": "314.16"}
+        ]
+    },
+    {
+        "id": "oop-code-011",
+        "name": "Counter Class",
+        "difficulty": "easy",
+        "topic": "Classes & Objects",
+        "description": "Create a Counter class with increment, decrement, and get_value methods.",
+        "input_format": "Commands: INC, DEC, GET",
+        "output_format": "For GET: print current counter value.",
+        "examples": [
+            {"input": "INC\nINC\nGET", "output": "2"},
+            {"input": "INC\nDEC\nGET", "output": "0"}
+        ],
+        "test_cases": [
+            {"input": "INC\nINC\nGET", "output": "2"},
+            {"input": "INC\nDEC\nGET", "output": "0"},
+            {"input": "GET", "output": "0"},
+            {"input": "INC\nINC\nINC\nGET", "output": "3"}
+        ]
+    },
+    {
+        "id": "oop-code-012",
+        "name": "Temperature Converter",
+        "difficulty": "easy",
+        "topic": "Classes & Objects",
+        "description": "Create Temperature class with celsius_to_fahrenheit and fahrenheit_to_celsius methods.",
+        "input_format": "Conversion type (C2F/F2C) and temperature value.",
+        "output_format": "Print converted temperature (2 decimal places).",
+        "examples": [
+            {"input": "C2F\n0", "output": "32.00"},
+            {"input": "F2C\n32", "output": "0.00"}
+        ],
+        "test_cases": [
+            {"input": "C2F\n0", "output": "32.00"},
+            {"input": "F2C\n32", "output": "0.00"},
+            {"input": "C2F\n100", "output": "212.00"},
+            {"input": "F2C\n212", "output": "100.00"}
+        ]
+    },
+    {
+        "id": "oop-code-013",
+        "name": "Point Distance",
+        "difficulty": "medium",
+        "topic": "Classes & Objects",
+        "description": "Create Point class with x and y coordinates. Implement distance_from method to calculate Euclidean distance from another point.",
+        "input_format": "Four integers: x1 y1 x2 y2",
+        "output_format": "Print distance (2 decimal places).",
+        "examples": [
+            {"input": "0 0 3 4", "output": "5.00"},
+            {"input": "1 1 4 5", "output": "5.00"}
+        ],
+        "test_cases": [
+            {"input": "0 0 3 4", "output": "5.00"},
+            {"input": "1 1 4 5", "output": "5.00"},
+            {"input": "0 0 0 0", "output": "0.00"}
+        ]
+    },
+    {
+        "id": "oop-code-014",
+        "name": "Fraction Class",
+        "difficulty": "hard",
+        "topic": "Operator Overloading",
+        "description": "Create Fraction class with numerator and denominator. Implement add method to add two fractions.",
+        "input_format": "Four integers: num1 den1 num2 den2",
+        "output_format": "Print result as 'numerator/denominator' in simplest form.",
+        "examples": [
+            {"input": "1 2 1 3", "output": "5/6"},
+            {"input": "1 4 1 4", "output": "1/2"}
+        ],
+        "test_cases": [
+            {"input": "1 2 1 3", "output": "5/6"},
+            {"input": "1 4 1 4", "output": "1/2"},
+            {"input": "2 3 1 3", "output": "1/1"}
+        ]
+    },
+    {
+        "id": "oop-code-015",
+        "name": "Time Class",
+        "difficulty": "medium",
+        "topic": "Classes & Objects",
+        "description": "Create Time class with hours, minutes, seconds. Implement add_seconds method and display in HH:MM:SS format.",
+        "input_format": "hours minutes seconds seconds_to_add",
+        "output_format": "Print time in HH:MM:SS format after adding seconds.",
+        "examples": [
+            {"input": "10 30 45 20", "output": "10:31:05"},
+            {"input": "23 59 50 15", "output": "00:00:05"}
+        ],
+        "test_cases": [
+            {"input": "10 30 45 20", "output": "10:31:05"},
+            {"input": "23 59 50 15", "output": "00:00:05"},
+            {"input": "0 0 0 3661", "output": "01:01:01"}
+        ]
+    },
+    {
+        "id": "oop-code-016",
+        "name": "Matrix Class",
+        "difficulty": "hard",
+        "topic": "Classes & Objects",
+        "description": "Create Matrix class for 2x2 matrices. Implement add method to add two matrices.",
+        "input_format": "8 integers: matrix1 (4 values) matrix2 (4 values)",
+        "output_format": "Print result matrix in 2 lines.",
+        "examples": [
+            {"input": "1 2 3 4 5 6 7 8", "output": "6 8\n10 12"}
+        ],
+        "test_cases": [
+            {"input": "1 2 3 4 5 6 7 8", "output": "6 8\n10 12"},
+            {"input": "0 0 0 0 1 1 1 1", "output": "1 1\n1 1"}
+        ]
+    },
+    {
+        "id": "oop-code-017",
+        "name": "Password Validator",
+        "difficulty": "medium",
+        "topic": "Encapsulation",
+        "description": "Create PasswordValidator class to check if password is valid (min 8 chars, has uppercase, lowercase, digit).",
+        "input_format": "A password string.",
+        "output_format": "Print 'Valid' or 'Invalid'.",
+        "examples": [
+            {"input": "Pass123word", "output": "Valid"},
+            {"input": "weak", "output": "Invalid"}
+        ],
+        "test_cases": [
+            {"input": "Pass123word", "output": "Valid"},
+            {"input": "weak", "output": "Invalid"},
+            {"input": "NoDigits", "output": "Invalid"},
+            {"input": "Good1Pass", "output": "Valid"}
+        ]
+    },
+    {
+        "id": "oop-code-018",
+        "name": "Stack Implementation",
+        "difficulty": "hard",
+        "topic": "Data Structures in OOP",
+        "description": "Implement Stack class with push, pop, and is_empty methods.",
+        "input_format": "Commands: PUSH value, POP, EMPTY",
+        "output_format": "For POP: print popped value or 'Empty'. For EMPTY: print 'Yes' or 'No'.",
+        "examples": [
+            {"input": "PUSH 10\nPUSH 20\nPOP", "output": "20"},
+            {"input": "POP", "output": "Empty"}
+        ],
+        "test_cases": [
+            {"input": "PUSH 10\nPUSH 20\nPOP", "output": "20"},
+            {"input": "POP", "output": "Empty"},
+            {"input": "EMPTY", "output": "Yes"}
+        ]
+    },
+    {
+        "id": "oop-code-019",
+        "name": "Queue Implementation",
+        "difficulty": "hard",
+        "topic": "Data Structures in OOP",
+        "description": "Implement Queue class with enqueue, dequeue, and size methods.",
+        "input_format": "Commands: ENQ value, DEQ, SIZE",
+        "output_format": "For DEQ: print dequeued value or 'Empty'. For SIZE: print queue size.",
+        "examples": [
+            {"input": "ENQ 10\nENQ 20\nDEQ", "output": "10"},
+            {"input": "ENQ 5\nSIZE", "output": "1"}
+        ],
+        "test_cases": [
+            {"input": "ENQ 10\nENQ 20\nDEQ", "output": "10"},
+            {"input": "ENQ 5\nSIZE", "output": "1"},
+            {"input": "DEQ", "output": "Empty"}
+        ]
+    },
+    {
+        "id": "oop-code-020",
+        "name": "Linked List Node",
+        "difficulty": "hard",
+        "topic": "Data Structures in OOP",
+        "description": "Create Node class and LinkedList class with insert_at_beginning and display methods.",
+        "input_format": "Commands: INSERT value, DISPLAY",
+        "output_format": "For DISPLAY: print all values separated by space.",
+        "examples": [
+            {"input": "INSERT 10\nINSERT 20\nDISPLAY", "output": "20 10"},
+            {"input": "INSERT 5\nDISPLAY", "output": "5"}
+        ],
+        "test_cases": [
+            {"input": "INSERT 10\nINSERT 20\nDISPLAY", "output": "20 10"},
+            {"input": "INSERT 5\nDISPLAY", "output": "5"},
+            {"input": "INSERT 1\nINSERT 2\nINSERT 3\nDISPLAY", "output": "3 2 1"}
         ]
     }
 ]
@@ -1160,6 +1626,176 @@ DSA_CODING_PROBLEMS = [
             {"input": "3 2\n1 2\n2 3", "output": "No Cycle"},
             {"input": "4 3\n1 2\n2 3\n3 1", "output": "Cycle"},
             {"input": "2 1\n1 2", "output": "No Cycle"}
+        ]
+    },
+    {
+        "id": "dsa-code-011",
+        "name": "Merge Two Sorted Arrays",
+        "difficulty": "easy",
+        "topic": "Arrays",
+        "description": "Merge two sorted arrays into one sorted array.",
+        "input_format": "First line: n. Second line: n sorted integers. Third line: m. Fourth line: m sorted integers.",
+        "output_format": "Print merged sorted array.",
+        "examples": [
+            {"input": "3\n1 3 5\n3\n2 4 6", "output": "1 2 3 4 5 6"}
+        ],
+        "test_cases": [
+            {"input": "3\n1 3 5\n3\n2 4 6", "output": "1 2 3 4 5 6"},
+            {"input": "2\n1 2\n2\n3 4", "output": "1 2 3 4"},
+            {"input": "1\n5\n1\n3", "output": "3 5"}
+        ]
+    },
+    {
+        "id": "dsa-code-012",
+        "name": "Find Kth Largest",
+        "difficulty": "medium",
+        "topic": "Arrays & Heaps",
+        "description": "Find the kth largest element in an unsorted array.",
+        "input_format": "First line: n k. Second line: n integers.",
+        "output_format": "Print the kth largest element.",
+        "examples": [
+            {"input": "5 2\n3 2 1 5 4", "output": "4"},
+            {"input": "6 3\n1 1 1 2 2 3", "output": "1"}
+        ],
+        "test_cases": [
+            {"input": "5 2\n3 2 1 5 4", "output": "4"},
+            {"input": "6 3\n1 1 1 2 2 3", "output": "1"},
+            {"input": "4 1\n10 20 30 40", "output": "40"}
+        ]
+    },
+    {
+        "id": "dsa-code-013",
+        "name": "Reverse Linked List",
+        "difficulty": "medium",
+        "topic": "Linked Lists",
+        "description": "Reverse a singly linked list.",
+        "input_format": "First line: n. Second line: n integers representing list.",
+        "output_format": "Print reversed list.",
+        "examples": [
+            {"input": "5\n1 2 3 4 5", "output": "5 4 3 2 1"},
+            {"input": "1\n42", "output": "42"}
+        ],
+        "test_cases": [
+            {"input": "5\n1 2 3 4 5", "output": "5 4 3 2 1"},
+            {"input": "1\n42", "output": "42"},
+            {"input": "3\n10 20 30", "output": "30 20 10"}
+        ]
+    },
+    {
+        "id": "dsa-code-014",
+        "name": "Valid Parentheses",
+        "difficulty": "medium",
+        "topic": "Stacks",
+        "description": "Check if a string of parentheses (), {}, [] is valid (properly matched and nested).",
+        "input_format": "A string containing only parentheses characters.",
+        "output_format": "Print 'Valid' or 'Invalid'.",
+        "examples": [
+            {"input": "()[]{}", "output": "Valid"},
+            {"input": "([)]", "output": "Invalid"}
+        ],
+        "test_cases": [
+            {"input": "()[]{}", "output": "Valid"},
+            {"input": "([)]", "output": "Invalid"},
+            {"input": "{[()]}", "output": "Valid"},
+            {"input": "((", "output": "Invalid"}
+        ]
+    },
+    {
+        "id": "dsa-code-015",
+        "name": "Level Order Traversal",
+        "difficulty": "medium",
+        "topic": "Trees & Queues",
+        "description": "Perform level order traversal of a binary tree.",
+        "input_format": "First line: n. Second line: n integers (use -1 for null nodes).",
+        "output_format": "Print level order traversal.",
+        "examples": [
+            {"input": "7\n1 2 3 4 5 6 7", "output": "1 2 3 4 5 6 7"}
+        ],
+        "test_cases": [
+            {"input": "7\n1 2 3 4 5 6 7", "output": "1 2 3 4 5 6 7"},
+            {"input": "1\n10", "output": "10"}
+        ]
+    },
+    {
+        "id": "dsa-code-016",
+        "name": "Hash Map Implementation",
+        "difficulty": "medium",
+        "topic": "Hash Tables",
+        "description": "Implement basic hash map operations: PUT key value, GET key.",
+        "input_format": "Commands: PUT k v, GET k",
+        "output_format": "For GET: print value or 'None'.",
+        "examples": [
+            {"input": "PUT 1 10\nGET 1", "output": "10"},
+            {"input": "GET 99", "output": "None"}
+        ],
+        "test_cases": [
+            {"input": "PUT 1 10\nGET 1", "output": "10"},
+            {"input": "GET 99", "output": "None"},
+            {"input": "PUT 5 50\nPUT 5 60\nGET 5", "output": "60"}
+        ]
+    },
+    {
+        "id": "dsa-code-017",
+        "name": "Dijkstra's Shortest Path",
+        "difficulty": "hard",
+        "topic": "Graphs & Heaps",
+        "description": "Find shortest path from source to all vertices using Dijkstra's algorithm.",
+        "input_format": "First line: n m s. Next m lines: u v w (edge from u to v with weight w).",
+        "output_format": "Print shortest distances from source s to all vertices.",
+        "examples": [
+            {"input": "3 3 1\n1 2 1\n2 3 2\n1 3 4", "output": "0 1 3"}
+        ],
+        "test_cases": [
+            {"input": "3 3 1\n1 2 1\n2 3 2\n1 3 4", "output": "0 1 3"}
+        ]
+    },
+    {
+        "id": "dsa-code-018",
+        "name": "Topological Sort",
+        "difficulty": "hard",
+        "topic": "Graphs",
+        "description": "Perform topological sort on a directed acyclic graph.",
+        "input_format": "First line: n m. Next m lines: u v (directed edge).",
+        "output_format": "Print one valid topological ordering.",
+        "examples": [
+            {"input": "4 4\n1 2\n1 3\n2 4\n3 4", "output": "1 2 3 4"}
+        ],
+        "test_cases": [
+            {"input": "4 4\n1 2\n1 3\n2 4\n3 4", "output": "1 2 3 4"}
+        ]
+    },
+    {
+        "id": "dsa-code-019",
+        "name": "Trie Insert and Search",
+        "difficulty": "hard",
+        "topic": "Tries",
+        "description": "Implement Trie with insert and search operations.",
+        "input_format": "Commands: INSERT word, SEARCH word",
+        "output_format": "For SEARCH: print 'Found' or 'Not Found'.",
+        "examples": [
+            {"input": "INSERT hello\nSEARCH hello", "output": "Found"},
+            {"input": "SEARCH world", "output": "Not Found"}
+        ],
+        "test_cases": [
+            {"input": "INSERT hello\nSEARCH hello", "output": "Found"},
+            {"input": "SEARCH world", "output": "Not Found"},
+            {"input": "INSERT test\nINSERT testing\nSEARCH test", "output": "Found"}
+        ]
+    },
+    {
+        "id": "dsa-code-020",
+        "name": "LRU Cache",
+        "difficulty": "hard",
+        "topic": "Hash Tables & Linked Lists",
+        "description": "Implement LRU (Least Recently Used) Cache with get and put operations.",
+        "input_format": "First line: capacity. Commands: PUT k v, GET k",
+        "output_format": "For GET: print value or '-1' if not found.",
+        "examples": [
+            {"input": "2\nPUT 1 10\nPUT 2 20\nGET 1\nPUT 3 30\nGET 2", "output": "10\n-1"}
+        ],
+        "test_cases": [
+            {"input": "2\nPUT 1 10\nPUT 2 20\nGET 1", "output": "10"},
+            {"input": "1\nPUT 1 10\nGET 1", "output": "10"}
         ]
     }
 ]

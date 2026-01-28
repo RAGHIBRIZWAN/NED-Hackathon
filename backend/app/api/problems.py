@@ -11,11 +11,14 @@ import tempfile
 import os
 import time
 import random
+import json
+import aiohttp
 from datetime import datetime
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, status, Depends, Query
+from fastapi import APIRouter, HTTPException, status, Depends, Query, Body
 from pydantic import BaseModel, Field
 
+from app.core.config import settings
 from app.core.security import get_current_user
 from app.models.user import User
 from app.data.cp_problems import CP_PROBLEMS, get_problem_by_id, get_problems_by_rating
@@ -25,6 +28,46 @@ from app.data.module_problems import (
 )
 
 router = APIRouter()
+
+
+# ============ Groq API Helper ============
+
+async def call_groq_api(prompt: str, temperature: float = 0.7) -> str:
+    """Call Groq API for text generation."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            headers = {
+                "Authorization": f"Bearer {settings.GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            
+            payload = {
+                "model": "llama-3.3-70b-versatile",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": temperature,
+                "max_tokens": 2000
+            }
+            
+            async with session.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data["choices"][0]["message"]["content"]
+                else:
+                    error_text = await response.text()
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Groq API error: {error_text}"
+                    )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to call Groq API: {str(e)}"
+        )
 
 
 # ============ Schemas ============
@@ -394,8 +437,12 @@ async def get_module_mcqs(
 
 
 @router.post("/modules/mcqs/{mcq_id}/check")
-async def check_mcq_answer(mcq_id: str, selected_option: str):
+async def check_mcq_answer(mcq_id: str, request: dict = Body(...)):
     """Check if the selected answer is correct."""
+    
+    selected_option = request.get("selected_option")
+    if not selected_option:
+        raise HTTPException(status_code=400, detail="selected_option is required")
     
     mcq = get_mcq_by_id(mcq_id)
     if not mcq:
@@ -404,10 +451,88 @@ async def check_mcq_answer(mcq_id: str, selected_option: str):
     is_correct = selected_option == mcq["correct_option"]
     
     return {
-        "correct": is_correct,
+        "is_correct": is_correct,
         "correct_option": mcq["correct_option"],
         "explanation": mcq["explanation"]
     }
+
+
+@router.get("/modules/{module_id}/mcqs/groq")
+async def generate_groq_mcqs(
+    module_id: str,
+    count: int = Query(10, ge=1, le=15, description="Number of MCQs to generate")
+):
+    """Generate MCQs using Groq AI for a module."""
+    
+    module_topics = {
+        "programming-fundamentals": "Programming Fundamentals: variables, data types, control flow, loops, functions, arrays, strings",
+        "pf": "Programming Fundamentals: variables, data types, control flow, loops, functions, arrays, strings",
+        "oop": "Object-Oriented Programming: classes, objects, inheritance, polymorphism, encapsulation, abstraction",
+        "data-structures": "Data Structures and Algorithms: arrays, linked lists, stacks, queues, trees, graphs, sorting, searching, dynamic programming",
+        "dsa": "Data Structures and Algorithms: arrays, linked lists, stacks, queues, trees, graphs, sorting, searching, dynamic programming"
+    }
+    
+    normalized_id = module_id.lower()
+    if normalized_id not in module_topics:
+        raise HTTPException(status_code=404, detail=f"Module '{module_id}' not found")
+    
+    topic = module_topics[normalized_id]
+    
+    prompt = f"""Generate {count} multiple-choice questions about {topic}.
+
+For each question, provide:
+1. A clear question
+2. Four answer options (A, B, C, D)
+3. The correct answer (A, B, C, or D)
+4. A brief explanation of why the answer is correct
+
+Format as JSON array:
+[
+  {{
+    "question": "question text",
+    "options": [
+      {{"id": "a", "text": "option A"}},
+      {{"id": "b", "text": "option B"}},
+      {{"id": "c", "text": "option C"}},
+      {{"id": "d", "text": "option D"}}
+    ],
+    "correct_option": "a",
+    "explanation": "explanation text"
+  }}
+]
+
+Make questions educational, practical, and relevant to {topic.split(':')[0]}."""
+    
+    try:
+        response = await call_groq_api(prompt, temperature=0.8)
+        
+        # Extract JSON from response
+        start = response.find('[')
+        end = response.rfind(']') + 1
+        if start == -1 or end == 0:
+            raise ValueError("No JSON array found in response")
+        
+        json_str = response[start:end]
+        mcqs = json.loads(json_str)
+        
+        # Add IDs
+        for i, mcq in enumerate(mcqs):
+            mcq["id"] = f"groq-{normalized_id}-{i+1}"
+            mcq["topic"] = topic.split(':')[0]
+            mcq["difficulty"] = "medium"
+        
+        return {
+            "module_id": normalized_id,
+            "module_name": topic.split(':')[0],
+            "total": len(mcqs),
+            "questions": mcqs
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate MCQs: {str(e)}"
+        )
 
 
 @router.get("/modules/{module_id}/coding")
@@ -670,76 +795,106 @@ async def generate_module_exam(
 
 
 @router.post("/modules/exam/submit")
-async def submit_exam(
-    module_id: str,
-    mcq_answers: dict = {},
-    coding_submissions: dict = {}
-):
-    """Submit exam answers and get results."""
+async def submit_exam(request: dict = Body(...)):
+    """Submit exam answers and get results with Groq AI justifications for wrong answers."""
     
-    results = {
-        "module_id": module_id,
-        "mcq_results": [],
-        "coding_results": [],
-        "total_score": 0,
-        "max_score": 0
-    }
+    module_id = request.get("module_id")
+    answers = request.get("answers", [])
+    
+    # Separate MCQ and coding answers
+    mcq_answers = {}
+    coding_submissions = {}
+    
+    for ans in answers:
+        q_id = ans.get("question_id")
+        q_type = ans.get("question_type", "mcq")
+        
+        if q_type == "mcq":
+            mcq_answers[q_id] = ans.get("selected_option")
+        elif q_type == "coding":
+            coding_submissions[q_id] = {
+                "code": ans.get("code", ""),
+                "language": ans.get("language", "python")
+            }
+    
+    total_correct = 0
+    total_questions = len(answers)
+    review = []
     
     # Check MCQ answers
-    mcq_score = 0
     for mcq_id, selected_option in mcq_answers.items():
         mcq = get_mcq_by_id(mcq_id)
         if mcq:
             is_correct = selected_option == mcq["correct_option"]
             if is_correct:
-                mcq_score += 1
-            results["mcq_results"].append({
-                "question_id": mcq_id,
-                "correct": is_correct,
-                "selected": selected_option,
-                "correct_answer": mcq["correct_option"],
-                "explanation": mcq["explanation"]
-            })
-    
-    results["mcq_score"] = mcq_score
-    results["total_mcqs"] = len(mcq_answers)
+                total_correct += 1
+            else:
+                # Generate Groq justification for wrong answer
+                try:
+                    selected_text = next((opt["text"] for opt in mcq["options"] if opt["id"] == selected_option), "Unknown")
+                    correct_text = next((opt["text"] for opt in mcq["options"] if opt["id"] == mcq["correct_option"]), "Unknown")
+                    
+                    prompt = f"""Question: {mcq["question"]}
+
+Student's answer: {selected_text}
+Correct answer: {correct_text}
+
+Explain in 2-3 sentences why the student's answer is wrong and why the correct answer is right. Be educational and helpful."""
+                    
+                    justification = await call_groq_api(prompt, temperature=0.7)
+                except Exception as e:
+                    print(f"Groq API error: {e}")
+                    justification = mcq.get("explanation", "")
+                
+                review.append({
+                    "question": mcq["question"],
+                    "user_answer": selected_text,
+                    "correct_answer": correct_text,
+                    "justification": justification
+                })
     
     # Check coding submissions
-    coding_score = 0
     for problem_id, submission in coding_submissions.items():
         problem = get_coding_problem_by_id(problem_id)
         if problem:
-            # Judge the submission
-            test_cases = problem["test_cases"]
+            test_cases = problem.get("test_cases", [])
+            if not test_cases:
+                continue
+                
             passed = 0
-            
             for tc in test_cases:
-                result = await MultiLangExecutor.execute(
-                    submission["code"],
-                    submission["language"],
-                    tc["input"]
-                )
-                if result["status"] == "success" and result["output"].strip() == tc["output"].strip():
-                    passed += 1
+                try:
+                    result = await MultiLangExecutor.execute(
+                        submission["code"],
+                        submission["language"],
+                        tc["input"]
+                    )
+                    if result["status"] == "success" and result["output"].strip() == tc["output"].strip():
+                        passed += 1
+                except:
+                    pass
             
-            score = (passed / len(test_cases)) * 10  # 10 points per problem
-            coding_score += score
-            
-            results["coding_results"].append({
-                "problem_id": problem_id,
-                "passed_tests": passed,
-                "total_tests": len(test_cases),
-                "score": score,
-                "verdict": "AC" if passed == len(test_cases) else "WA"
-            })
+            # Consider coding problem correct if all tests pass
+            if passed == len(test_cases):
+                total_correct += 1
+            else:
+                review.append({
+                    "question": f"Coding: {problem['name']}",
+                    "user_answer": f"Passed {passed}/{len(test_cases)} tests",
+                    "correct_answer": "All test cases should pass",
+                    "justification": f"Your code passed {passed} out of {len(test_cases)} test cases. Review the problem constraints and examples."
+                })
     
-    results["coding_score"] = coding_score
-    results["total_coding"] = len(coding_submissions)
-    results["total_score"] = mcq_score + coding_score
-    results["max_score"] = len(mcq_answers) + (len(coding_submissions) * 10)
-    results["percentage"] = (results["total_score"] / results["max_score"] * 100) if results["max_score"] > 0 else 0
+    score = round((total_correct / total_questions * 100) if total_questions > 0 else 0)
     
-    return results
+    return {
+        "module_id": module_id,
+        "score": score,
+        "passing_score": 60,
+        "correct": total_correct,
+        "total": total_questions,
+        "review": review
+    }
 
 
 # ============ All Problems Summary ============

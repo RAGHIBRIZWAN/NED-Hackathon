@@ -21,6 +21,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { lessonsAPI } from '../services/api';
+import api from '../services/api';
 
 // New module definitions
 const MODULES = [
@@ -137,13 +138,48 @@ const Courses = () => {
     }
   }, [searchParams]);
 
-  // Fetch lessons for selected module and mode
+  // Fetch lessons/problems for selected module and mode
   const { data: lessonsData, isLoading: lessonsLoading } = useQuery({
     queryKey: ['lessons', selectedModule?.id, selectedMode?.id],
-    queryFn: () => lessonsAPI.getLessons({ 
-      course_id: selectedModule?.id, 
-      mode: selectedMode?.id 
-    }),
+    queryFn: async () => {
+      // For Practice mode on PF, OOP, DSA modules, fetch coding problems
+      if (selectedMode?.id === 'practice' && ['programming-fundamentals', 'oop', 'data-structures'].includes(selectedModule?.id)) {
+        const response = await api.get(`/problems/modules/${selectedModule.id}/coding`);
+        return { data: { lessons: response.data.problems.map(p => ({
+          id: p.id,
+          title: p.name,
+          slug: p.id,
+          difficulty: p.difficulty,
+          estimated_minutes: 15,
+          xp_reward: 50,
+          completed: false,
+          type: 'coding'
+        })) }};
+      }
+      // For Quiz mode on PF, OOP, DSA modules, fetch MCQs
+      if (selectedMode?.id === 'quiz' && ['programming-fundamentals', 'oop', 'data-structures'].includes(selectedModule?.id)) {
+        const response = await api.get(`/problems/modules/${selectedModule.id}/mcqs`);
+        return { data: { lessons: response.data.questions.map(mcq => ({
+          id: mcq.id,
+          title: mcq.question,
+          slug: mcq.id,
+          difficulty: mcq.difficulty,
+          estimated_minutes: 2,
+          xp_reward: 10,
+          completed: false,
+          type: 'mcq'
+        })) }};
+      }
+      // For Exam mode, just redirect or show message
+      if (selectedMode?.id === 'exam') {
+        return { data: { lessons: [] }};
+      }
+      // Otherwise, fetch regular lessons
+      return lessonsAPI.getLessons({ 
+        course_id: selectedModule?.id, 
+        mode: selectedMode?.id 
+      });
+    },
     enabled: !!selectedModule && !!selectedMode,
   });
 
@@ -153,6 +189,9 @@ const Courses = () => {
     setSelectedMode(mode);
     if (mode.id === 'contest') {
       navigate('/compete');
+    } else if (mode.id === 'exam' && ['programming-fundamentals', 'oop', 'data-structures'].includes(selectedModule?.id)) {
+      // Redirect to exam page with module ID
+      navigate(`/exam?module=${selectedModule.id}`);
     }
   };
 
@@ -368,7 +407,13 @@ const Courses = () => {
                     transition={{ delay: index * 0.05 }}
                   >
                     <Link
-                      to={`/${selectedMode.route}/${lesson.slug}`}
+                      to={
+                        lesson.type === 'coding' 
+                          ? `/practice?module=${selectedModule.id}&problem=${lesson.id}`
+                          : lesson.type === 'mcq'
+                          ? `/quiz?module=${selectedModule.id}&mcq=${lesson.id}`
+                          : `/${selectedMode.route}/${lesson.slug}`
+                      }
                       className="flex items-center gap-4 p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-gray-600 transition-colors"
                     >
                       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
