@@ -22,6 +22,7 @@ import {
 import { lessonsAPI, aiAPI, codeAPI } from '../services/api';
 import { useSettingsStore } from '../stores/settingsStore';
 import toast from 'react-hot-toast';
+import ttsService from '../services/ttsService';
 
 const Lesson = () => {
   const { slug } = useParams();
@@ -36,6 +37,7 @@ const Lesson = () => {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [isAiThinking, setIsAiThinking] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Fetch lesson data
   const { data: lessonData, isLoading } = useQuery({
@@ -99,14 +101,43 @@ const Lesson = () => {
         history: chatMessages.slice(-10),
       });
       
-      setChatMessages(prev => [...prev, {
+      const aiMessage = {
         role: 'assistant',
         content: response.data.response,
-      }]);
+      };
+      setChatMessages(prev => [...prev, aiMessage]);
+      
+      // Auto-speak AI response
+      handleSpeakMessage(response.data.response);
     } catch (error) {
       toast.error('Failed to get AI response');
     } finally {
       setIsAiThinking(false);
+    }
+  };
+
+  const handleSpeakMessage = async (text) => {
+    if (isSpeaking) {
+      ttsService.stop();
+      setIsSpeaking(false);
+      return;
+    }
+
+    setIsSpeaking(true);
+    try {
+      await ttsService.speak(text, {
+        language: instructionLanguage,
+        rate: 0.95,
+        onStart: () => setIsSpeaking(true),
+        onEnd: () => setIsSpeaking(false),
+        onError: (error) => {
+          console.error('TTS error:', error);
+          setIsSpeaking(false);
+        }
+      });
+    } catch (error) {
+      console.error('TTS error:', error);
+      setIsSpeaking(false);
     }
   };
 
@@ -331,7 +362,16 @@ const Lesson = () => {
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-800 text-gray-200'
                   }`}>
-                    {msg.content}
+                    <p>{msg.content}</p>
+                    {msg.role === 'assistant' && (
+                      <button
+                        onClick={() => handleSpeakMessage(msg.content)}
+                        className="mt-2 p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors"
+                        title={isSpeaking ? "Stop speaking" : "Listen"}
+                      >
+                        <Volume2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               ))}

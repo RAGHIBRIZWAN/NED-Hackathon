@@ -15,12 +15,14 @@ import {
   ChevronLeft,
   Eye,
   EyeOff,
-  MessageCircle
+  MessageCircle,
+  Volume2
 } from 'lucide-react';
 import { codeAPI, aiAPI } from '../services/api';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useGamificationStore } from '../stores/gamificationStore';
 import toast from 'react-hot-toast';
+import ttsService from '../services/ttsService';
 
 const Challenge = () => {
   const { slug } = useParams();
@@ -37,6 +39,7 @@ const Challenge = () => {
   const [showHint, setShowHint] = useState(false);
   const [hint, setHint] = useState('');
   const [isLoadingHint, setIsLoadingHint] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Fetch challenge
   const { data: challengeData, isLoading } = useQuery({
@@ -115,12 +118,41 @@ const Challenge = () => {
         language: programmingLanguage,
         instruction_language: instructionLanguage,
       });
-      setHint(response.data.hint || response.data.response);
+      const hintText = response.data.hint || response.data.response;
+      setHint(hintText);
       setShowHint(true);
+      
+      // Auto-speak hint
+      handleSpeakHint(hintText);
     } catch (error) {
       toast.error('Failed to get hint');
     } finally {
       setIsLoadingHint(false);
+    }
+  };
+
+  const handleSpeakHint = async (text) => {
+    if (isSpeaking) {
+      ttsService.stop();
+      setIsSpeaking(false);
+      return;
+    }
+
+    setIsSpeaking(true);
+    try {
+      await ttsService.speak(text, {
+        language: instructionLanguage,
+        rate: 0.95,
+        onStart: () => setIsSpeaking(true),
+        onEnd: () => setIsSpeaking(false),
+        onError: (error) => {
+          console.error('TTS error:', error);
+          setIsSpeaking(false);
+        }
+      });
+    } catch (error) {
+      console.error('TTS error:', error);
+      setIsSpeaking(false);
     }
   };
 
@@ -242,9 +274,18 @@ const Challenge = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg"
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <MessageCircle size={16} className="text-yellow-400" />
-                  <span className="font-semibold text-yellow-400">AI Hint</span>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle size={16} className="text-yellow-400" />
+                    <span className="font-semibold text-yellow-400">AI Hint</span>
+                  </div>
+                  <button
+                    onClick={() => handleSpeakHint(hint)}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-yellow-500/20 rounded-lg transition-colors"
+                    title={isSpeaking ? "Stop speaking" : "Listen to hint"}
+                  >
+                    <Volume2 size={16} className={isSpeaking ? "text-yellow-400" : ""} />
+                  </button>
                 </div>
                 <p className="text-gray-300 text-sm">{hint}</p>
               </motion.div>

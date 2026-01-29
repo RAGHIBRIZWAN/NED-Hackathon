@@ -12,10 +12,13 @@ import {
   CheckCircle,
   XCircle,
   HelpCircle,
-  RotateCcw
+  RotateCcw,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import ttsService from '../services/ttsService';
 
 const MODULE_NAMES = {
   'programming-fundamentals': 'Programming Fundamentals',
@@ -37,6 +40,7 @@ const Quiz = () => {
   const [aiExplanation, setAiExplanation] = useState(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [quizComplete, setQuizComplete] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Fetch all MCQs for the module
   const { data: mcqData, isLoading } = useQuery({
@@ -82,6 +86,11 @@ const Quiz = () => {
         toast.error('Incorrect!');
       }
       setScore(prev => ({ ...prev, total: prev.total + 1 }));
+      
+      // Auto-speak explanation if available
+      if (data.ai_explanation || data.explanation) {
+        handleSpeakExplanation(data.ai_explanation || data.explanation);
+      }
     },
     onError: (error) => {
       toast.error('Failed to check answer');
@@ -106,6 +115,10 @@ const Quiz = () => {
   };
 
   const handleNextQuestion = () => {
+    // Stop any playing speech
+    ttsService.stop();
+    setIsSpeaking(false);
+    
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
       setSelectedAnswer(null);
@@ -118,12 +131,40 @@ const Quiz = () => {
   };
 
   const handlePreviousQuestion = () => {
+    // Stop any playing speech
+    ttsService.stop();
+    setIsSpeaking(false);
+    
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
       setSelectedAnswer(null);
       setShowResult(false);
       setCorrectAnswer(null);
       setAiExplanation(null);
+    }
+  };
+
+  const handleSpeakExplanation = async (text) => {
+    if (isSpeaking) {
+      ttsService.stop();
+      setIsSpeaking(false);
+      return;
+    }
+
+    setIsSpeaking(true);
+    try {
+      await ttsService.speak(text, {
+        rate: 0.95,
+        onStart: () => setIsSpeaking(true),
+        onEnd: () => setIsSpeaking(false),
+        onError: (error) => {
+          console.error('TTS error:', error);
+          setIsSpeaking(false);
+        }
+      });
+    } catch (error) {
+      console.error('TTS error:', error);
+      setIsSpeaking(false);
     }
   };
 
@@ -360,9 +401,22 @@ const Quiz = () => {
                   {/* AI Explanation */}
                   {aiExplanation && (
                     <div className="mt-4 p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                      <div className="flex items-start gap-2 mb-2">
-                        <span className="text-xl">🤖</span>
-                        <span className="font-semibold text-blue-400">AI Tutor Explanation</span>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-start gap-2">
+                          <span className="text-xl">🤖</span>
+                          <span className="font-semibold text-blue-400">AI Tutor Explanation</span>
+                        </div>
+                        <button
+                          onClick={() => handleSpeakExplanation(aiExplanation)}
+                          className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                          title={isSpeaking ? "Stop speaking" : "Listen to explanation"}
+                        >
+                          {isSpeaking ? (
+                            <VolumeX className="w-5 h-5 text-blue-400" />
+                          ) : (
+                            <Volume2 className="w-5 h-5" />
+                          )}
+                        </button>
                       </div>
                       <p className="text-gray-300 leading-relaxed whitespace-pre-line">
                         {aiExplanation}

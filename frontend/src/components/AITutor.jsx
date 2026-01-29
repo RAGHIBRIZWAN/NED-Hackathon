@@ -17,6 +17,7 @@ import {
 import { aiAPI } from '../services/api';
 import { useSettingsStore } from '../stores/settingsStore';
 import toast from 'react-hot-toast';
+import ttsService from '../services/ttsService';
 
 const AITutor = ({
   context = '',
@@ -89,7 +90,7 @@ const AITutor = ({
       
       // Auto-speak if voice tutor is enabled
       if (voiceTutor) {
-        handleSpeak(response.data.response);
+        await handleSpeak(response.data.response);
       }
     } catch (error) {
       toast.error('Failed to get response');
@@ -100,19 +101,25 @@ const AITutor = ({
   };
 
   const handleSpeak = async (text) => {
-    if (isSpeaking) return;
+    if (isSpeaking) {
+      ttsService.stop();
+      setIsSpeaking(false);
+      return;
+    }
     
     setIsSpeaking(true);
     try {
-      const response = await aiAPI.textToSpeech({
-        text,
+      await ttsService.speak(text, {
         language: instructionLanguage,
+        rate: 0.95,
+        onStart: () => setIsSpeaking(true),
+        onEnd: () => setIsSpeaking(false),
+        onError: (error) => {
+          console.error('TTS error:', error);
+          setIsSpeaking(false);
+          toast.error('Voice playback failed');
+        }
       });
-      
-      // Play audio
-      const audio = new Audio(response.data.audio_url);
-      audio.onended = () => setIsSpeaking(false);
-      audio.play();
     } catch (error) {
       console.error('TTS error:', error);
       setIsSpeaking(false);

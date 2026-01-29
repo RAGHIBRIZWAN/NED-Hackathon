@@ -7,21 +7,12 @@ JWT handling, password hashing, and authentication helpers.
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from .config import settings
 
-
-# Password hashing context with bcrypt
-# Using bcrypt with truncate_error=False to handle long passwords automatically
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__rounds=12,
-    bcrypt__ident="2b"
-)
 
 # Bearer token security
 security = HTTPBearer()
@@ -33,13 +24,33 @@ def hash_password(password: str) -> str:
     if isinstance(password, str):
         password_bytes = password.encode('utf-8')
         if len(password_bytes) > 72:
-            password = password_bytes[:72].decode('utf-8', errors='ignore')
-    return pwd_context.hash(password)
+            password_bytes = password_bytes[:72]
+    else:
+        password_bytes = password
+    
+    # Generate salt and hash the password
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    # Truncate password to 72 bytes if necessary (bcrypt limitation)
+    if isinstance(plain_password, str):
+        password_bytes = plain_password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+    else:
+        password_bytes = plain_password
+    
+    # Convert hash to bytes if it's a string
+    if isinstance(hashed_password, str):
+        hashed_bytes = hashed_password.encode('utf-8')
+    else:
+        hashed_bytes = hashed_password
+    
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
 def create_access_token(
